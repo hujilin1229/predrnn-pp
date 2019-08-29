@@ -11,7 +11,7 @@ from nets import models_factory
 from data_provider import datasets_factory
 from utils import preprocess
 from utils import metrics
-from skimage.measure import compare_ssim
+# from skimage.measure import compare_ssim
 
 # -----------------------------------------------------------------------------
 FLAGS = tf.app.flags.FLAGS
@@ -261,8 +261,8 @@ def main(argv=None):
                     for b in range(FLAGS.batch_size):
                         sharp[i] += np.max(
                             cv2.convertScaleAbs(cv2.Laplacian(pred_frm[b],3)))
-                        score, _ = compare_ssim(pred_frm[b],real_frm[b],full=True)
-                        ssim[i] += score
+                        # score, _ = compare_ssim(pred_frm[b],real_frm[b],full=True)
+                        # ssim[i] += score
 
                 # save prediction examples
                 if batch_id <= 10:

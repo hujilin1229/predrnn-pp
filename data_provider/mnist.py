@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class InputHandle:
-    def __init__(self, input_param):
+    def __init__(self, input_param, mode='train'):
         self.paths = input_param['paths']
         self.num_paths = len(input_param['paths'])
         self.name = input_param['name']

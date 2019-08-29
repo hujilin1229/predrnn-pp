@@ -1,8 +1,12 @@
 import numpy as np
 import random
+import h5py
+import os
+from utils.preprocess import list_filenames
+import cv2
 
 class InputHandle:
-    def __init__(self, input_param):
+    def __init__(self, input_param, mode='train'):
         self.paths = input_param['paths']
         self.num_paths = len(input_param['paths'])
         self.name = input_param['name']
@@ -10,6 +14,10 @@ class InputHandle:
         self.output_data_type = input_param.get('output_data_type', 'float32')
         self.minibatch_size = input_param['minibatch_size']
         self.is_output_sequence = input_param['is_output_sequence']
+        self.down_sample = input_param['down_sample']
+        self.seq_len = input_param['seq_len']
+        self.horizon = input_param['horizon']
+        self.mode = mode
         self.data = {}
         self.indices = {}
         self.current_position = 0
@@ -20,13 +28,18 @@ class InputHandle:
         self.load()
 
     def load(self):
+        if not os.path.exists(self.paths[0]):
+            self.preprocessing(down_sample=self.down_sample, seq_len=self.seq_len, horizon=self.horizon)
         dat_1 = np.load(self.paths[0])
         for key in dat_1.keys():
             self.data[key] = dat_1[key]
         if self.num_paths == 2:
             dat_2 = np.load(self.paths[1])
+            # what is clips?:
+            # indices for input and output:
             num_clips_1 = dat_1['clips'].shape[1]
             dat_2['clips'][:,:,0] += num_clips_1
+            # do concat
             self.data['clips'] = np.concatenate(
                 (dat_1['clips'], dat_2['clips']), axis=1)
             self.data['input_raw_data'] = np.concatenate(
@@ -93,6 +106,7 @@ class InputHandle:
             data_slice = np.transpose(data_slice,(0,2,3,1))
             input_batch[i, :self.current_input_length, :, :, :] = data_slice
         input_batch = input_batch.astype(self.input_data_type)
+
         return input_batch
 
     def output_batch(self):
@@ -133,3 +147,62 @@ class InputHandle:
         output_seq = self.output_batch()
         batch = np.concatenate((input_seq, output_seq), axis=1)
         return batch
+
+    def preprocessing(self, down_sample=1, seq_len=12, horizon=3):
+
+        current_dir = os.path.dirname(self.paths[0])
+        raw_data_dir = os.path.join(current_dir, self.name)
+        files = list_filenames(raw_data_dir)
+        num_days = len(files)
+        time_slots = 288
+        input_raw_data = [[], [], []]
+        for f in files:
+            try:
+                fr = h5py.File(raw_data_dir + '/' + f, 'r')
+                data = fr.get('array').value
+                fr.close()
+            except:
+                continue
+            data = np.transpose(data, (0, 3, 1, 2))
+            for j in range(data.shape[1]):
+                for i in range(data.shape[0]):
+                    tmp_data = data[i, j, :, :]
+                    n_rows, n_cols = tmp_data.shape
+                    # down sample the image
+                    tmp_data = cv2.resize(tmp_data, (n_cols//down_sample, n_rows//down_sample))
+                    input_raw_data[j].append(tmp_data)
+
+        input_raw_data_channel_1 = np.stack(input_raw_data[0], axis=0) # volume
+        input_raw_data_channel_2 = np.stack(input_raw_data[1], axis=0) # speed
+        input_raw_data_channel_3 = np.stack(input_raw_data[2], axis=0) # heading
+
+        # expand dims on axis1
+        input_raw_data_channel_1 = np.expand_dims(input_raw_data_channel_1, axis=1)
+        input_raw_data_channel_2 = np.expand_dims(input_raw_data_channel_2, axis=1)
+        input_raw_data_channel_3 = np.expand_dims(input_raw_data_channel_3, axis=1)
+
+        resulted_cols = input_raw_data_channel_1.shape[-1]
+        resulted_rows = input_raw_data_channel_1.shape[-2]
+        dims = [[1, resulted_rows, resulted_cols]]
+
+        # construct clips
+        num_batches_one_day = time_slots // (seq_len + horizon)
+        input_starts = np.arange(0, time_slots, (seq_len + horizon), np.int)[:num_batches_one_day]
+        output_starts = np.arange(seq_len, time_slots, (seq_len + horizon), np.int)
+        day_index = np.repeat(np.arange(num_days), num_batches_one_day) * time_slots
+        input_starts = np.tile(input_starts, num_days) + day_index
+        output_starts = np.tile(output_starts, num_days) + day_index
+
+        input_seq_lens = np.array([seq_len] * (num_days * num_batches_one_day), np.int)
+        output_horizons = np.array([horizon] * (num_days * num_batches_one_day), np.int)
+        input_clips = np.stack([input_starts, input_seq_lens], axis=1)
+        output_clips = np.stack([output_starts, output_horizons], axis=1)
+        clips = np.stack([input_clips, output_clips], axis=0)
+
+        # save different files
+        volume_path = current_dir + '/{}_volume_down_sample{}.npz'.format(self.mode, down_sample)
+        speed_path = current_dir + '/{}_speed_down_sample{}.npz'.format(self.mode, down_sample)
+        heading_path = current_dir + '/{}_heading_down_sample{}.npz'.format(self.mode, down_sample)
+        np.savez(volume_path, dims=dims, clips=clips, input_raw_data=input_raw_data_channel_1)
+        np.savez(speed_path, dims=dims, clips=clips, input_raw_data=input_raw_data_channel_2)
+        np.savez(heading_path, dims=dims, clips=clips, input_raw_data=input_raw_data_channel_3)
