@@ -46,6 +46,8 @@ tf.app.flags.DEFINE_integer('seq_length', 15,
                             'total input and output length.')
 tf.app.flags.DEFINE_integer('img_width', 64,
                             'input image width.')
+tf.app.flags.DEFINE_integer('img_height', 64,
+                            'input image width.')
 tf.app.flags.DEFINE_integer('img_channel', 1,
                             'number of image channel.')
 tf.app.flags.DEFINE_integer('stride', 1,
