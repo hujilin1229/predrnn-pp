@@ -96,7 +96,7 @@ class Model(object):
         self.pred_seq = []
         self.tf_lr = tf.placeholder(tf.float32, shape=[])
         num_hidden = [int(x) for x in FLAGS.num_hidden.split(',')]
-        print(num_hidden)
+        print("hidden shape is ", num_hidden)
         num_layers = len(num_hidden)
         with tf.variable_scope(tf.get_variable_scope()):
             # define a model

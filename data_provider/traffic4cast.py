@@ -104,6 +104,7 @@ class InputHandle:
                     self.data['clips'][0, batch_ind, 1]
             data_slice = self.data['input_raw_data'][begin:end, :, :, :]
             data_slice = np.transpose(data_slice,(0,2,3,1))
+            print("data slice shape is ", data_slice.shape)
             input_batch[i, :self.current_input_length, :, :, :] = data_slice
         input_batch = input_batch.astype(self.input_data_type)
 
@@ -183,7 +184,7 @@ class InputHandle:
 
         resulted_cols = input_raw_data_channel_1.shape[-1]
         resulted_rows = input_raw_data_channel_1.shape[-2]
-        dims = [[1, resulted_rows, resulted_cols]]
+        dims = np.array([[1, resulted_rows, resulted_cols]], np.int)
 
         # construct clips
         num_batches_one_day = time_slots // (seq_len + horizon)
