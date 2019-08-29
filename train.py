@@ -187,9 +187,9 @@ def main(argv=None):
             (FLAGS.batch_size,FLAGS.seq_length-FLAGS.input_length-1))
         true_token = (random_flip < eta)
         #true_token = (random_flip < pow(base,itr))
-        ones = np.ones(int(FLAGS.img_width/FLAGS.patch_size),
+        ones = np.ones((int(FLAGS.img_width/FLAGS.patch_size),
                         int(FLAGS.img_width/FLAGS.patch_size),
-                        int(FLAGS.patch_size**2*FLAGS.img_channel))
+                        int(FLAGS.patch_size**2*FLAGS.img_channel)))
         zeros = np.zeros((int(FLAGS.img_width/FLAGS.patch_size),
                           int(FLAGS.img_width/FLAGS.patch_size),
                           int(FLAGS.patch_size**2*FLAGS.img_channel)))
