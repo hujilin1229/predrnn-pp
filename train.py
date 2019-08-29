@@ -54,7 +54,7 @@ tf.app.flags.DEFINE_integer('stride', 1,
                             'stride of a convlstm layer.')
 tf.app.flags.DEFINE_integer('filter_size', 5,
                             'filter of a convlstm layer.')
-tf.app.flags.DEFINE_string('num_hidden', '32,64',
+tf.app.flags.DEFINE_string('num_hidden', '32,32',
                            'COMMA separated number of units in a convlstm layer.')
 tf.app.flags.DEFINE_integer('patch_size', 4,
                             'patch size on one dimension.')
