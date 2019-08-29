@@ -38,9 +38,9 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
         reuse = bool(gen_images)
         with tf.variable_scope('predrnn_pp', reuse=reuse):
             if t < input_length:
-                inputs = images[:,t]
+                inputs = images[:,t, ...]
             else:
-                inputs = mask_true[:,t-10, ...]*images[:,t, ...] + (1-mask_true[:,t-10, ...])*x_gen
+                inputs = mask_true[:,t-input_length, ...]*images[:,t, ...] + (1-mask_true[:,t-input_length, ...])*x_gen
 
             hidden[0], cell[0], mem = lstm[0](inputs, hidden[0], cell[0], mem)
             z_t = gradient_highway(hidden[0], z_t)
