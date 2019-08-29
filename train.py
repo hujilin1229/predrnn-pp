@@ -40,9 +40,9 @@ tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
-tf.app.flags.DEFINE_integer('input_length', 10,
+tf.app.flags.DEFINE_integer('input_length', 12,
                             'encoder hidden states.')
-tf.app.flags.DEFINE_integer('seq_length', 20,
+tf.app.flags.DEFINE_integer('seq_length', 15,
                             'total input and output length.')
 tf.app.flags.DEFINE_integer('img_width', 64,
                             'input image width.')
@@ -80,16 +80,16 @@ class Model(object):
         self.x = tf.placeholder(tf.float32,
                                 [FLAGS.batch_size,
                                  FLAGS.seq_length,
-                                 FLAGS.img_width/FLAGS.patch_size,
-                                 FLAGS.img_width/FLAGS.patch_size,
-                                 FLAGS.patch_size*FLAGS.patch_size*FLAGS.img_channel])
+                                 FLAGS.img_height,
+                                 FLAGS.img_width,
+                                 int(FLAGS.patch_size*FLAGS.patch_size*FLAGS.img_channel)])
 
         self.mask_true = tf.placeholder(tf.float32,
                                         [FLAGS.batch_size,
                                          FLAGS.seq_length-FLAGS.input_length-1,
-                                         FLAGS.img_width/FLAGS.patch_size,
-                                         FLAGS.img_width/FLAGS.patch_size,
-                                         FLAGS.patch_size*FLAGS.patch_size*FLAGS.img_channel])
+                                         FLAGS.img_height,
+                                         FLAGS.img_width,
+                                         int(FLAGS.patch_size*FLAGS.patch_size*FLAGS.img_channel)])
 
         grads = []
         loss_train = []
@@ -163,8 +163,11 @@ def main(argv=None):
     # load data
     train_input_handle, test_input_handle = datasets_factory.data_provider(
         FLAGS.dataset_name, train_data_paths, valid_data_paths,
-        FLAGS.batch_size, FLAGS.img_width, FLAGS.down_sample, FLAGS.seq_len, FLAGS.horizon)
+        FLAGS.batch_size, True, FLAGS.down_sample, FLAGS.input_length, FLAGS.seq_length - FLAGS.input_length)
 
+    dims = train_input_handle.dims
+    FLAGS.img_height = dims[-2]
+    FLAGS.img_width = dims[-1]
     print("Initializing models")
     model = Model()
     lr = FLAGS.lr
@@ -187,11 +190,11 @@ def main(argv=None):
             (FLAGS.batch_size,FLAGS.seq_length-FLAGS.input_length-1))
         true_token = (random_flip < eta)
         #true_token = (random_flip < pow(base,itr))
-        ones = np.ones((int(FLAGS.img_width/FLAGS.patch_size),
-                        int(FLAGS.img_width/FLAGS.patch_size),
+        ones = np.ones((FLAGS.img_height,
+                        FLAGS.img_width,
                         int(FLAGS.patch_size**2*FLAGS.img_channel)))
-        zeros = np.zeros((int(FLAGS.img_width/FLAGS.patch_size),
-                          int(FLAGS.img_width/FLAGS.patch_size),
+        zeros = np.zeros((int(FLAGS.img_height),
+                          int(FLAGS.img_width),
                           int(FLAGS.patch_size**2*FLAGS.img_channel)))
         mask_true = []
         for i in range(FLAGS.batch_size):
@@ -203,8 +206,8 @@ def main(argv=None):
         mask_true = np.array(mask_true)
         mask_true = np.reshape(mask_true, (FLAGS.batch_size,
                                            FLAGS.seq_length-FLAGS.input_length-1,
-                                           int(FLAGS.img_width/FLAGS.patch_size),
-                                           int(FLAGS.img_width/FLAGS.patch_size),
+                                           int(FLAGS.img_height),
+                                           int(FLAGS.img_width),
                                            int(FLAGS.patch_size**2*FLAGS.img_channel)))
         cost = model.train(ims, lr, mask_true)
         if FLAGS.reverse_input:
@@ -232,8 +235,8 @@ def main(argv=None):
                 sharp.append(0)
             mask_true = np.zeros((FLAGS.batch_size,
                                   FLAGS.seq_length-FLAGS.input_length-1,
-                                  FLAGS.img_width/FLAGS.patch_size,
-                                  FLAGS.img_width/FLAGS.patch_size,
+                                  FLAGS.img_height,
+                                  FLAGS.img_width,
                                   FLAGS.patch_size**2*FLAGS.img_channel))
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1

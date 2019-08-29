@@ -27,6 +27,10 @@ class InputHandle:
         self.current_output_length = 0
         self.load()
 
+    @property
+    def dims(self):
+        return self.data['dims'][0]
+
     def load(self):
         if not os.path.exists(self.paths[0]):
             self.preprocessing(down_sample=self.down_sample, seq_len=self.seq_len, horizon=self.horizon)
