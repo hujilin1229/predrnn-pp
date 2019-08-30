@@ -108,7 +108,7 @@ class Model(object):
         self.pred_seq = []
         self.tf_lr = tf.placeholder(tf.float32, shape=[])
         num_hidden = [int(x) for x in FLAGS.num_hidden.split(',')]
-        print("hidden shape is ", num_hidden)
+        print("hidden shape is ", num_hidden, flush=True)
         num_layers = len(num_hidden)
         with tf.variable_scope(tf.get_variable_scope()):
             # define a model
@@ -158,7 +158,7 @@ class Model(object):
     def save(self, itr):
         checkpoint_path = os.path.join(FLAGS.save_dir, 'model.ckpt')
         self.saver.save(self.sess, checkpoint_path, global_step=itr)
-        print('saved to ' + FLAGS.save_dir)
+        print('saved to ' + FLAGS.save_dir, flush=True)
 
 def main(argv=None):
     if tf.gfile.Exists(FLAGS.save_dir):
@@ -190,7 +190,7 @@ def main(argv=None):
     dims = train_input_handle.dims
     FLAGS.img_height = dims[-2]
     FLAGS.img_width = dims[-1]
-    print("Initializing models")
+    print("Initializing models", flush=True)
     model = Model()
     lr = FLAGS.lr
 
@@ -238,11 +238,11 @@ def main(argv=None):
             cost = cost/2
 
         if itr % FLAGS.display_interval == 0:
-            print('itr: ' + str(itr))
-            print('training loss: ' + str(cost))
+            print('itr: ' + str(itr), flush=True)
+            print('training loss: ' + str(cost), flush=True)
 
         if itr % FLAGS.test_interval == 0:
-            print('test...')
+            print('test...', flush=True)
             test_input_handle.begin(do_shuffle = False)
             res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
             os.mkdir(res_path)
@@ -308,21 +308,21 @@ def main(argv=None):
                         cv2.imwrite(file_name, img_pd)
                 test_input_handle.next()
             avg_mse = avg_mse / (batch_id*FLAGS.batch_size)
-            print('mse per seq: ' + str(avg_mse))
+            print('mse per seq: ' + str(avg_mse), flush=True)
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(img_mse[i] / (batch_id*FLAGS.batch_size))
             psnr = np.asarray(psnr, dtype=np.float32)/batch_id
             fmae = np.asarray(fmae, dtype=np.float32)/batch_id
             sharp = np.asarray(sharp, dtype=np.float32)/(FLAGS.batch_size*batch_id)
-            print('psnr per frame: ' + str(np.mean(psnr)))
+            print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
             for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(psnr[i])
+                print(psnr[i], flush=True)
             print('fmae per frame: ' + str(np.mean(fmae)))
             for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(fmae[i])
+                print(fmae[i], flush=True)
             print('sharpness per frame: ' + str(np.mean(sharp)))
             for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(sharp[i])
+                print(sharp[i], flush=True)
 
             # test with file
             valid_data_path = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,'{}_validation'.format(FLAGS.dataset_name))
@@ -369,7 +369,7 @@ def main(argv=None):
             labels_all = np.expand_dims(labels_all[..., 1], axis=2)
             valid_mse = masked_mse_np(output_resize, labels_all, np.nan)
 
-            print("validation mse is ", valid_mse)
+            print("validation mse is ", valid_mse, flush=True)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
