@@ -107,7 +107,7 @@ class InputHandle:
             end = self.data['clips'][0, batch_ind, 0] + \
                     self.data['clips'][0, batch_ind, 1]
             data_slice = self.data['input_raw_data'][begin:end, :, :, :]
-            data_slice = np.transpose(data_slice,(0,2,3,1))
+            data_slice = np.transpose(data_slice, (0,2,3,1))
             input_batch[i, :self.current_input_length, :, :, :] = data_slice
         input_batch = input_batch.astype(self.input_data_type)
 

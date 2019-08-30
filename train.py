@@ -11,7 +11,21 @@ from nets import models_factory
 from data_provider import datasets_factory
 from utils import preprocess
 from utils import metrics
+from utils.preprocess import list_filenames
 # from skimage.measure import compare_ssim
+
+def masked_mse_np(preds, labels, null_val=np.nan):
+    with np.errstate(divide='ignore', invalid='ignore'):
+        if np.isnan(null_val):
+            mask = ~np.isnan(labels)
+        else:
+            mask = np.not_equal(labels, null_val)
+        mask = mask.astype('float32')
+        # mask /= np.mean(mask)
+        rmse = np.square(np.subtract(preds, labels)).astype('float32')
+        rmse = np.nan_to_num(rmse * mask)
+
+        return np.sum(rmse) / np.sum(mask)
 
 # -----------------------------------------------------------------------------
 FLAGS = tf.app.flags.FLAGS
@@ -31,10 +45,6 @@ tf.app.flags.DEFINE_string('gen_frm_dir', 'results/mnist_predrnn_pp',
                            'dir to store result.')
 tf.app.flags.DEFINE_integer('down_sample', 4,
                             'ratio to down sample.')
-tf.app.flags.DEFINE_integer('seq_len', 12,
-                            'seq len for forecasting.')
-tf.app.flags.DEFINE_integer('horizon', 3,
-                            'horizon to forecast.')
 # model
 tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
                            'The name of the architecture.')
@@ -71,7 +81,7 @@ tf.app.flags.DEFINE_integer('max_iterations', 80000,
                             'max num of steps.')
 tf.app.flags.DEFINE_integer('display_interval', 1,
                             'number of iters showing training loss.')
-tf.app.flags.DEFINE_integer('test_interval', 2000,
+tf.app.flags.DEFINE_integer('test_interval', 10,
                             'number of iters for test.')
 tf.app.flags.DEFINE_integer('snapshot_interval', 10000,
                             'number of iters saving models.')
@@ -160,12 +170,22 @@ def main(argv=None):
 
     train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,
                                     'train_speed_down_sample{}.npz'.format(FLAGS.down_sample))
-    valid_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,
+    valid_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name,
                                     'valid_speed_down_sample{}.npz'.format(FLAGS.down_sample))
     # load data
     train_input_handle, test_input_handle = datasets_factory.data_provider(
         FLAGS.dataset_name, train_data_paths, valid_data_paths,
         FLAGS.batch_size, True, FLAGS.down_sample, FLAGS.input_length, FLAGS.seq_length - FLAGS.input_length)
+
+    cities = ['Berlin', 'Istanbul', 'Moscow']
+    # The following indicies are the start indicies of the 3 images to predict in the 288 time bins (0 to 287)
+    # in each daily test file. These are time zone dependent. Berlin lies in UTC+2 whereas Istanbul and Moscow
+    # lie in UTC+3.
+    utcPlus2 = [30, 69, 126, 186, 234]
+    utcPlus3 = [57, 114, 174, 222, 258]
+    indicies = utcPlus3
+    if FLAGS.dataset_name == 'Berlin':
+        indicies = utcPlus2
 
     dims = train_input_handle.dims
     FLAGS.img_height = dims[-2]
@@ -189,7 +209,7 @@ def main(argv=None):
         else:
             eta = 0.0
         random_flip = np.random.random_sample(
-            (FLAGS.batch_size,FLAGS.seq_length-FLAGS.input_length-1))
+            (FLAGS.batch_size, FLAGS.seq_length-FLAGS.input_length-1))
         true_token = (random_flip < eta)
         #true_token = (random_flip < pow(base,itr))
         ones = np.ones((FLAGS.img_height,
@@ -228,7 +248,7 @@ def main(argv=None):
             os.mkdir(res_path)
             avg_mse = 0
             batch_id = 0
-            img_mse,ssim,psnr,fmae,sharp= [],[],[],[],[]
+            img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 img_mse.append(0)
                 ssim.append(0)
@@ -293,7 +313,6 @@ def main(argv=None):
                 print(img_mse[i] / (batch_id*FLAGS.batch_size))
             psnr = np.asarray(psnr, dtype=np.float32)/batch_id
             fmae = np.asarray(fmae, dtype=np.float32)/batch_id
-            ssim = np.asarray(ssim, dtype=np.float32)/(FLAGS.batch_size*batch_id)
             sharp = np.asarray(sharp, dtype=np.float32)/(FLAGS.batch_size*batch_id)
             print('psnr per frame: ' + str(np.mean(psnr)))
             for i in range(FLAGS.seq_length - FLAGS.input_length):
@@ -301,12 +320,56 @@ def main(argv=None):
             print('fmae per frame: ' + str(np.mean(fmae)))
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(fmae[i])
-            print('ssim per frame: ' + str(np.mean(ssim)))
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(ssim[i])
             print('sharpness per frame: ' + str(np.mean(sharp)))
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(sharp[i])
+
+            # test with file
+            valid_data_path = os.path.join(FLAGS.train_data_paths, '{}_validation'.format(FLAGS.dataset_name))
+            files = list_filenames(valid_data_path)
+            output_all = []
+            labels_all = []
+            for f in files:
+                valid_file = valid_data_path + '/' + f
+                valid_input, raw_output = datasets_factory.test_validation_provider(
+                    valid_file, indicies, down_sample=FLAGS.down_sample, seq_len=FLAGS.input_length,
+                    horizon=FLAGS.seq_length - FLAGS.input_length)
+                labels_all.append(raw_output)
+                num_tests = len(indicies)
+                num_partitions = np.ceil(num_tests / FLAGS.batch_size)
+                for i in range(num_partitions):
+                    valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
+                    num_input_i = valid_input_i.shape[0]
+                    if num_input_i < FLAGS.batch_size:
+                        zeros_fill_in = np.zeros((FLAGS.batch_size - num_input_i,
+                                                  FLAGS.input_length,
+                                                  FLAGS.img_height,
+                                                  FLAGS.img_width,
+                                                  FLAGS.img_channel))
+                        valid_input_i = np.concatenate([valid_input_i, zeros_fill_in], axis=0)
+                    img_gen = model.test(valid_input_i, mask_true)
+                    output_all += img_gen[:num_input_i]
+
+            output_all = np.concatenate(output_all, axis=0)
+            labels_all = np.concatenate(labels_all, axis=0)
+
+            origin_height = labels_all.shape[-3]
+            origin_width = labels_all.shape[-2]
+            output_resize = []
+            for i in range(output_all.shape[0]):
+                output_i = []
+                for j in range(output_all.shape[1]):
+                    tmp_data = output_all[i, j, 1, :, :]
+                    tmp_data = cv2.resize(tmp_data, (origin_height, origin_width))
+                    tmp_data = np.expand_dims(tmp_data, axis=0)
+                    output_i.append(tmp_data)
+                output_i = np.stack(output_i, axis=0)
+                output_resize.append(output_i)
+            output_resize = np.stack(output_resize, axis=0)
+
+            valid_mse = masked_mse_np(output_resize, labels_all, np.nan)
+
+            print("validation mse is ", valid_mse)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
