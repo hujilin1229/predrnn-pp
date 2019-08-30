@@ -336,7 +336,7 @@ def main(argv=None):
                     horizon=FLAGS.seq_length - FLAGS.input_length)
                 labels_all.append(raw_output)
                 num_tests = len(indicies)
-                num_partitions = np.ceil(num_tests / FLAGS.batch_size)
+                num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
                 for i in range(num_partitions):
                     valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                     num_input_i = valid_input_i.shape[0]
