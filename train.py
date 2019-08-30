@@ -342,7 +342,7 @@ def main(argv=None):
                     num_input_i = valid_input_i.shape[0]
                     if num_input_i < FLAGS.batch_size:
                         zeros_fill_in = np.zeros((FLAGS.batch_size - num_input_i,
-                                                  FLAGS.input_length,
+                                                  FLAGS.seq_length,
                                                   FLAGS.img_height,
                                                   FLAGS.img_width,
                                                   FLAGS.img_channel))

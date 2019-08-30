@@ -110,9 +110,9 @@ def test_validation_provider(data_file, indices, down_sample=4, seq_len=12, hori
     input_raw_data_channel_2 = np.expand_dims(input_raw_data_channel_2, axis=1)
     input_raw_data_channel_3 = np.expand_dims(input_raw_data_channel_3, axis=1)
 
-    input_raw_data_channel_1 = [input_raw_data_channel_1[i:i+seq_len] for i in indices]
-    input_raw_data_channel_2 = [input_raw_data_channel_2[i:i + seq_len] for i in indices]
-    input_raw_data_channel_3 = [input_raw_data_channel_3[i:i + seq_len] for i in indices]
+    input_raw_data_channel_1 = [input_raw_data_channel_1[i:i + seq_len + horizon] for i in indices]
+    input_raw_data_channel_2 = [input_raw_data_channel_2[i:i + seq_len + horizon] for i in indices]
+    input_raw_data_channel_3 = [input_raw_data_channel_3[i:i + seq_len + horizon] for i in indices]
 
     original_output_data = [data[i+seq_len:i+seq_len+horizon] for i in indices]
 
