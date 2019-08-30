@@ -38,7 +38,7 @@ class InputHandle:
         for key in dat_1.keys():
             self.data[key] = dat_1[key]
             if key == 'input_raw_data' and self.data[key].max() > 1.0:
-                self.data[key] /= self.data[key].max()
+                self.data[key] /= 255.0
         if self.num_paths == 2:
             dat_2 = np.load(self.paths[1])
             # what is clips?:
