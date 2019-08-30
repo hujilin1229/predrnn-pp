@@ -81,7 +81,7 @@ tf.app.flags.DEFINE_integer('max_iterations', 80000,
                             'max num of steps.')
 tf.app.flags.DEFINE_integer('display_interval', 1,
                             'number of iters showing training loss.')
-tf.app.flags.DEFINE_integer('test_interval', 10,
+tf.app.flags.DEFINE_integer('test_interval', 200,
                             'number of iters for test.')
 tf.app.flags.DEFINE_integer('snapshot_interval', 10000,
                             'number of iters saving models.')
