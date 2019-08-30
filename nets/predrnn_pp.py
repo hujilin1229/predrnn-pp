@@ -53,6 +53,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
                                      filters=output_channels,
                                      kernel_size=1,
                                      strides=1,
+                                     activation=tf.nn.sigmoid,
                                      padding='same',
                                      name="back_to_pixel")
             gen_images.append(x_gen)

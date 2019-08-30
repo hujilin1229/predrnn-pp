@@ -334,6 +334,7 @@ def main(argv=None):
                 valid_input, raw_output = datasets_factory.test_validation_provider(
                     valid_file, indicies, down_sample=FLAGS.down_sample, seq_len=FLAGS.input_length,
                     horizon=FLAGS.seq_length - FLAGS.input_length)
+                valid_input /= 255.0
                 labels_all.append(raw_output)
                 num_tests = len(indicies)
                 num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
@@ -366,6 +367,7 @@ def main(argv=None):
                 output_resize.append(output_i)
             output_resize = np.stack(output_resize, axis=0)
 
+            output_resize *= 255.0
             labels_all = np.expand_dims(labels_all[..., 1], axis=2)
             valid_mse = masked_mse_np(output_resize, labels_all, np.nan)
 

@@ -52,5 +52,6 @@ class GHU():
             p = tf.nn.tanh(p)
             u = tf.nn.sigmoid(u)
             z_new = u * p + (1-u) * z
+
             return z_new
 
