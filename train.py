@@ -334,7 +334,7 @@ def main(argv=None):
                 valid_input, raw_output = datasets_factory.test_validation_provider(
                     valid_file, indicies, down_sample=FLAGS.down_sample, seq_len=FLAGS.input_length,
                     horizon=FLAGS.seq_length - FLAGS.input_length)
-                valid_input /= 255.0
+                valid_input = valid_input.astype(np.float) / 255.0
                 labels_all.append(raw_output)
                 num_tests = len(indicies)
                 num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
