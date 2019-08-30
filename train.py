@@ -342,6 +342,8 @@ def main(argv=None):
                 for i in range(num_partitions):
                     valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                     num_input_i = valid_input_i.shape[0]
+                    print(num_input_i)
+
                     if num_input_i < FLAGS.batch_size:
                         zeros_fill_in = np.zeros((FLAGS.batch_size - num_input_i,
                                                   FLAGS.seq_length,
@@ -354,6 +356,7 @@ def main(argv=None):
 
             output_all = np.concatenate(output_all, axis=0)
             labels_all = np.concatenate(labels_all, axis=0)
+            print("resulted in output is ", output_all.shape)
 
             origin_height = labels_all.shape[-2]
             origin_width = labels_all.shape[-3]
