@@ -337,13 +337,9 @@ def main(argv=None):
                 labels_all.append(raw_output)
                 num_tests = len(indicies)
                 num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
-
-                print("bz, parts", FLAGS.batch_size, num_partitions)
                 for i in range(num_partitions):
                     valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                     num_input_i = valid_input_i.shape[0]
-                    print(num_input_i)
-
                     if num_input_i < FLAGS.batch_size:
                         zeros_fill_in = np.zeros((FLAGS.batch_size - num_input_i,
                                                   FLAGS.seq_length,
@@ -352,14 +348,10 @@ def main(argv=None):
                                                   FLAGS.img_channel))
                         valid_input_i = np.concatenate([valid_input_i, zeros_fill_in], axis=0)
                     img_gen = model.test(valid_input_i, mask_true)
-                    print(len(img_gen))
-                    print(len(img_gen[:num_input_i]))
-                    output_all += img_gen[:num_input_i]
+                    output_all.append(img_gen[0][:num_input_i])
 
             output_all = np.concatenate(output_all, axis=0)
             labels_all = np.concatenate(labels_all, axis=0)
-            print("resulted in output is ", output_all.shape)
-
             origin_height = labels_all.shape[-2]
             origin_width = labels_all.shape[-3]
             output_resize = []
