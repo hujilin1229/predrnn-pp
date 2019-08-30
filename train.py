@@ -337,6 +337,8 @@ def main(argv=None):
                 labels_all.append(raw_output)
                 num_tests = len(indicies)
                 num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
+
+                print("bz, parts", FLAGS.batch_size, num_partitions)
                 for i in range(num_partitions):
                     valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                     num_input_i = valid_input_i.shape[0]
@@ -353,8 +355,8 @@ def main(argv=None):
             output_all = np.concatenate(output_all, axis=0)
             labels_all = np.concatenate(labels_all, axis=0)
 
-            origin_height = labels_all.shape[-3]
-            origin_width = labels_all.shape[-2]
+            origin_height = labels_all.shape[-2]
+            origin_width = labels_all.shape[-3]
             output_resize = []
             for i in range(output_all.shape[0]):
                 output_i = []
@@ -367,6 +369,7 @@ def main(argv=None):
                 output_resize.append(output_i)
             output_resize = np.stack(output_resize, axis=0)
 
+            labels_all = np.expand_dims(labels_all[..., 1], axis=2)
             valid_mse = masked_mse_np(output_resize, labels_all, np.nan)
 
             print("validation mse is ", valid_mse)
