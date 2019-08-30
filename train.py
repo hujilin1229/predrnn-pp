@@ -352,6 +352,8 @@ def main(argv=None):
                                                   FLAGS.img_channel))
                         valid_input_i = np.concatenate([valid_input_i, zeros_fill_in], axis=0)
                     img_gen = model.test(valid_input_i, mask_true)
+                    print(len(img_gen))
+                    print(len(img_gen[:num_input_i]))
                     output_all += img_gen[:num_input_i]
 
             output_all = np.concatenate(output_all, axis=0)
