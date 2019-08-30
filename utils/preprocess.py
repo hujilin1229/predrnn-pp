@@ -33,15 +33,15 @@ def reshape_patch_back(patch_tensor, patch_size):
     patch_height = np.shape(patch_tensor)[2]
     patch_width = np.shape(patch_tensor)[3]
     channels = np.shape(patch_tensor)[4]
-    img_channels = channels / (patch_size*patch_size)
+    img_channels = int(channels / (patch_size*patch_size))
     a = np.reshape(patch_tensor, [batch_size, seq_length,
                                   patch_height, patch_width,
                                   patch_size, patch_size,
                                   img_channels])
     b = np.transpose(a, [0,1,2,4,3,5,6])
     img_tensor = np.reshape(b, [batch_size, seq_length,
-                                patch_height * patch_size,
-                                patch_width * patch_size,
+                                int(patch_height * patch_size),
+                                int(patch_width * patch_size),
                                 img_channels])
     return img_tensor
 
