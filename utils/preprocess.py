@@ -12,8 +12,6 @@ def reshape_patch(img_tensor, patch_size):
     img_height = np.shape(img_tensor)[2]
     img_width = np.shape(img_tensor)[3]
     num_channels = np.shape(img_tensor)[4]
-
-    print(img_tensor.shape)
     a = np.reshape(img_tensor, [batch_size, seq_length,
                                 int(img_height/patch_size), patch_size,
                                 int(img_width/patch_size), patch_size,
