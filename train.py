@@ -325,7 +325,7 @@ def main(argv=None):
                 print(sharp[i])
 
             # test with file
-            valid_data_path = os.path.join(FLAGS.train_data_paths, '{}_validation'.format(FLAGS.dataset_name))
+            valid_data_path = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,'{}_validation'.format(FLAGS.dataset_name))
             files = list_filenames(valid_data_path)
             output_all = []
             labels_all = []
