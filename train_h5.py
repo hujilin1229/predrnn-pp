@@ -157,12 +157,12 @@ class Model(object):
         print('saved to ' + FLAGS.save_dir, flush=True)
 
 def main(argv=None):
-    if tf.gfile.Exists(FLAGS.save_dir):
-        tf.gfile.DeleteRecursively(FLAGS.save_dir)
-    tf.gfile.MakeDirs(FLAGS.save_dir)
-    if tf.gfile.Exists(FLAGS.gen_frm_dir):
-        tf.gfile.DeleteRecursively(FLAGS.gen_frm_dir)
-    tf.gfile.MakeDirs(FLAGS.gen_frm_dir)
+    if tf.io.gfile.exists(FLAGS.save_dir):
+        tf.io.gfile.rmtree(FLAGS.save_dir)
+    tf.io.gfile.makedirs(FLAGS.save_dir)
+    if tf.io.gfile.exists(FLAGS.gen_frm_dir):
+        tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
+    tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
     train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_training')
     valid_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
