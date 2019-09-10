@@ -2,18 +2,12 @@
 __author__ = 'jilin'
 
 import os.path
-import time
 import numpy as np
 import tensorflow as tf
-import cv2
-import sys
-import random
 from nets import models_factory
 from data_provider import datasets_factory
 from utils import preprocess
 from utils import metrics
-from utils.preprocess import list_filenames
-# from skimage.measure import compare_ssim
 
 def masked_mse_np(preds, labels, null_val=np.nan):
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -289,9 +283,9 @@ def main(argv=None):
                     real_frm = np.uint8(x * 255)
                     pred_frm = np.uint8(gx * 255)
                     psnr[i] += metrics.batch_psnr(pred_frm, real_frm)
-                    for b in range(FLAGS.batch_size):
-                        sharp[i] += np.max(
-                            cv2.convertScaleAbs(cv2.Laplacian(pred_frm[b],3)))
+                    # for b in range(FLAGS.batch_size):
+                    #     sharp[i] += np.max(
+                    #         cv2.convertScaleAbs(cv2.Laplacian(pred_frm[b],3)))
                         # score, _ = compare_ssim(pred_frm[b],real_frm[b],full=True)
                         # ssim[i] += score
 
