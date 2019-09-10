@@ -1,4 +1,5 @@
-__author__ = 'yunbo'
+# this file is adapted from train.py which is authored by 'yunbo'
+__author__ = 'jilin'
 
 import os.path
 import time
@@ -43,20 +44,18 @@ tf.app.flags.DEFINE_string('save_dir', 'checkpoints/mnist_predrnn_pp',
                             'dir to store trained net.')
 tf.app.flags.DEFINE_string('gen_frm_dir', 'results/mnist_predrnn_pp',
                            'dir to store result.')
-tf.app.flags.DEFINE_integer('down_sample', 4,
-                            'ratio to down sample.')
 # model
 tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
-tf.app.flags.DEFINE_integer('input_length', 12,
+tf.app.flags.DEFINE_integer('input_length', 6,
                             'encoder hidden states.')
-tf.app.flags.DEFINE_integer('seq_length', 15,
+tf.app.flags.DEFINE_integer('seq_length', 9,
                             'total input and output length.')
-tf.app.flags.DEFINE_integer('img_width', 64,
+tf.app.flags.DEFINE_integer('img_width', 436,
                             'input image width.')
-tf.app.flags.DEFINE_integer('img_height', 64,
+tf.app.flags.DEFINE_integer('img_height', 495,
                             'input image width.')
 tf.app.flags.DEFINE_integer('img_channel', 1,
                             'number of image channel.')
@@ -66,8 +65,11 @@ tf.app.flags.DEFINE_integer('filter_size', 5,
                             'filter of a convlstm layer.')
 tf.app.flags.DEFINE_string('num_hidden', '32,32',
                            'COMMA separated number of units in a convlstm layer.')
-tf.app.flags.DEFINE_integer('patch_size', 4,
+tf.app.flags.DEFINE_integer('patch_size_height', 5,
                             'patch size on one dimension.')
+tf.app.flags.DEFINE_integer('patch_size_width', 4,
+                            'patch size on one dimension.')
+
 tf.app.flags.DEFINE_boolean('layer_norm', True,
                             'whether to apply tensor layer norm.')
 # optimization
@@ -94,14 +96,14 @@ class Model(object):
                                  FLAGS.seq_length,
                                  FLAGS.img_height,
                                  FLAGS.img_width,
-                                 int(FLAGS.patch_size*FLAGS.patch_size*FLAGS.img_channel)])
+                                 int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)])
 
         self.mask_true = tf.placeholder(tf.float32,
                                         [FLAGS.batch_size,
                                          FLAGS.seq_length-FLAGS.input_length-1,
                                          FLAGS.img_height,
                                          FLAGS.img_width,
-                                         int(FLAGS.patch_size*FLAGS.patch_size*FLAGS.img_channel)])
+                                         int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)])
 
         grads = []
         loss_train = []
@@ -168,10 +170,8 @@ def main(argv=None):
         tf.gfile.DeleteRecursively(FLAGS.gen_frm_dir)
     tf.gfile.MakeDirs(FLAGS.gen_frm_dir)
 
-    train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,
-                                    'train_speed_down_sample{}.npz'.format(FLAGS.down_sample))
-    valid_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name,
-                                    'valid_speed_down_sample{}.npz'.format(FLAGS.down_sample))
+    train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_training')
+    valid_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
     # load data
     train_input_handle, test_input_handle = datasets_factory.data_provider(
         FLAGS.dataset_name, train_data_paths, valid_data_paths,
@@ -187,9 +187,8 @@ def main(argv=None):
     if FLAGS.dataset_name == 'Berlin':
         indicies = utcPlus2
 
-    dims = train_input_handle.dims
-    FLAGS.img_height = dims[-2]
-    FLAGS.img_width = dims[-1]
+    # dims = train_input_handle.dims
+
     print("Initializing models", flush=True)
     model = Model()
     lr = FLAGS.lr
@@ -202,25 +201,28 @@ def main(argv=None):
         if train_input_handle.no_batch_left():
             train_input_handle.begin(do_shuffle=True)
         ims = train_input_handle.get_batch()
-        ims = preprocess.reshape_patch(ims, FLAGS.patch_size)
+        ims = preprocess.reshape_patch(ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
+
+        FLAGS.img_height = ims.shape[2]
+        FLAGS.img_width = ims.shape[3]
 
         if itr < 50000:
             eta -= delta
         else:
             eta = 0.0
         random_flip = np.random.random_sample(
-            (FLAGS.batch_size, FLAGS.seq_length-FLAGS.input_length-1))
+            (FLAGS.batch_size, FLAGS.seq_length-FLAGS.input_length))
         true_token = (random_flip < eta)
         #true_token = (random_flip < pow(base,itr))
         ones = np.ones((FLAGS.img_height,
                         FLAGS.img_width,
-                        int(FLAGS.patch_size**2*FLAGS.img_channel)))
+                        int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
         zeros = np.zeros((int(FLAGS.img_height),
                           int(FLAGS.img_width),
-                          int(FLAGS.patch_size**2*FLAGS.img_channel)))
+                          int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
         mask_true = []
         for i in range(FLAGS.batch_size):
-            for j in range(FLAGS.seq_length-FLAGS.input_length-1):
+            for j in range(FLAGS.seq_length-FLAGS.input_length):
                 if true_token[i,j]:
                     mask_true.append(ones)
                 else:
@@ -230,7 +232,7 @@ def main(argv=None):
                                            FLAGS.seq_length-FLAGS.input_length-1,
                                            int(FLAGS.img_height),
                                            int(FLAGS.img_width),
-                                           int(FLAGS.patch_size**2*FLAGS.img_channel)))
+                                           int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
         cost = model.train(ims, lr, mask_true)
         if FLAGS.reverse_input:
             ims_rev = ims[:,::-1]
@@ -259,16 +261,16 @@ def main(argv=None):
                                   FLAGS.seq_length-FLAGS.input_length-1,
                                   FLAGS.img_height,
                                   FLAGS.img_width,
-                                  FLAGS.patch_size**2*FLAGS.img_channel))
+                                  FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
                 test_ims = test_input_handle.get_batch()
-                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size)
+                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 img_gen = model.test(test_dat, mask_true)
 
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
-                img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size)
+                img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # MSE per frame
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = test_ims[:,i + FLAGS.input_length,:,:,0]

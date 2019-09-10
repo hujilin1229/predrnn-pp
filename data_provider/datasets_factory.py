@@ -1,17 +1,17 @@
-from data_provider import mnist, traffic4cast
+from data_provider import mnist, traffic4cast_raw
 import h5py
 import numpy as np
 import cv2
 
 datasets_map = {
     'mnist': mnist,
-    'Berlin': traffic4cast,
-    'Istanbul': traffic4cast,
-    'Moscow': traffic4cast
+    'Berlin': traffic4cast_raw,
+    'Istanbul': traffic4cast_raw,
+    'Moscow': traffic4cast_raw
 }
 
 def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
-                  is_training=True, down_sample=4, seq_len=12, horizon=3):
+                  is_training=True, patch_size_width=4, patch_size_height=5, seq_len=12, horizon=3):
     '''Given a dataset name and returns a Dataset.
     Args:
         dataset_name: String, the name of the dataset.
@@ -54,11 +54,9 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
             return test_input_handle
     else:
         test_input_param = {'paths': valid_data_list,
-                            'minibatch_size': batch_size,
+                            'num_files': batch_size,
                             'input_data_type': 'float32',
-                            'is_output_sequence': True,
-                            'name': dataset_name+'_validation',
-                            'down_sample': down_sample,
+                            'output_data_type': 'float32',
                             'seq_len': seq_len,
                             'horizon': horizon
                             }
@@ -66,11 +64,9 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
         test_input_handle.begin(do_shuffle = False)
         if is_training:
             train_input_param = {'paths': train_data_list,
-                                 'minibatch_size': batch_size,
+                                 'num_files': batch_size,
                                  'input_data_type': 'float32',
-                                 'is_output_sequence': True,
-                                 'name': dataset_name+'_training',
-                                 'down_sample': down_sample,
+                                 'output_data_type': 'float32',
                                  'seq_len': seq_len,
                                  'horizon': horizon
                                  }
