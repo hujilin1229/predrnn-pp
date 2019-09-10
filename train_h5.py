@@ -51,7 +51,7 @@ tf.app.flags.DEFINE_integer('img_width', 109, # 435 /5
                             'input image width.')
 tf.app.flags.DEFINE_integer('img_height', 99, # 496/4
                             'input image width.')
-tf.app.flags.DEFINE_integer('img_channel', 1,
+tf.app.flags.DEFINE_integer('img_channel', 3,
                             'number of image channel.')
 tf.app.flags.DEFINE_integer('stride', 1,
                             'stride of a convlstm layer.')
