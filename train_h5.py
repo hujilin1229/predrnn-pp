@@ -86,14 +86,14 @@ class Model(object):
     def __init__(self):
         # inputs
         self.x = tf.placeholder(tf.float32,
-                                [-1,
+                                [None,
                                  FLAGS.seq_length,
                                  FLAGS.img_height,
                                  FLAGS.img_width,
                                  int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)])
 
         self.mask_true = tf.placeholder(tf.float32,
-                                        [-1,
+                                        [None,
                                          FLAGS.seq_length-FLAGS.input_length-1,
                                          FLAGS.img_height,
                                          FLAGS.img_width,
