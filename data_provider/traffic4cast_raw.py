@@ -52,7 +52,7 @@ class InputHandle:
 
     def get_batch(self):
         data = next(iter(self.data_loader))
-        data = data.numpy().astype(self.input_data_type)
+        data = data.numpy().astype(self.input_data_type) / 255.0
         num_files, num_data, height, width, channel = data.shape
         num_batch_per_file = num_data // (self.seq_len + self.horizon)
         batch = data[:, :num_batch_per_file*(self.seq_len + self.horizon)].reshape(
@@ -63,7 +63,7 @@ class InputHandle:
     def get_test_batch(self, indices):
         # num of batches: len(indices)
         data = next(iter(self.data_loader))
-        data = data.squeeze(0).numpy().astype(self.input_data_type)
+        data = data.squeeze(0).numpy().astype(self.input_data_type) / 255.0
         data = [data[i-self.seq_len:i+self.horizon] for i in indices]
         data = np.stack(data, axis=0)
 
