@@ -75,7 +75,7 @@ tf.app.flags.DEFINE_integer('batch_file', 1,
                             'num of file per batch for training.')
 tf.app.flags.DEFINE_integer('max_iterations', 80000,
                             'max num of steps.')
-tf.app.flags.DEFINE_integer('display_interval', 1,
+tf.app.flags.DEFINE_integer('display_interval', 100,
                             'number of iters showing training loss.')
 tf.app.flags.DEFINE_integer('test_interval', 200,
                             'number of iters for test.')
