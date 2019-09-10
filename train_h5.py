@@ -98,6 +98,7 @@ class Model(object):
                                          FLAGS.img_height,
                                          FLAGS.img_width,
                                          int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)])
+        self.batchsize = tf.placeholder(tf.int32, [], name='batchsize')
 
         grads = []
         loss_train = []
@@ -114,7 +115,8 @@ class Model(object):
                 num_layers, num_hidden,
                 FLAGS.filter_size, FLAGS.stride,
                 FLAGS.seq_length, FLAGS.input_length,
-                FLAGS.layer_norm)
+                FLAGS.layer_norm,
+                self.batchsize)
             gen_ims = output_list[0]
             loss = output_list[1]
             pred_ims = gen_ims[:,FLAGS.input_length-1:]
@@ -138,16 +140,18 @@ class Model(object):
         if FLAGS.pretrained_model:
             self.saver.restore(self.sess, FLAGS.pretrained_model)
 
-    def train(self, inputs, lr, mask_true):
+    def train(self, inputs, lr, mask_true, batch_size):
         feed_dict = {self.x: inputs}
         feed_dict.update({self.tf_lr: lr})
         feed_dict.update({self.mask_true: mask_true})
+        feed_dict.update({self.batchsize: batch_size})
         loss, _ = self.sess.run((self.loss_train, self.train_op), feed_dict)
         return loss
 
-    def test(self, inputs, mask_true):
+    def test(self, inputs, mask_true, batch_size):
         feed_dict = {self.x: inputs}
         feed_dict.update({self.mask_true: mask_true})
+        feed_dict.update({self.batchsize: batch_size})
         gen_ims = self.sess.run(self.pred_seq, feed_dict)
         return gen_ims
 
@@ -227,10 +231,10 @@ def main(argv=None):
                                            int(FLAGS.img_height),
                                            int(FLAGS.img_width),
                                            int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-        cost = model.train(ims, lr, mask_true)
+        cost = model.train(ims, lr, mask_true, FLAGS.batch_size)
         if FLAGS.reverse_input:
             ims_rev = ims[:,::-1]
-            cost += model.train(ims_rev, lr, mask_true)
+            cost += model.train(ims_rev, lr, mask_true, FLAGS.batch_size)
             cost = cost/2
 
         if itr % FLAGS.display_interval == 0:
@@ -264,7 +268,7 @@ def main(argv=None):
                 test_ims = test_input_handle.get_test_batch(indicies)
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
 
-                img_gen = model.test(test_dat, mask_true)
+                img_gen = model.test(test_dat, mask_true, FLAGS.batch_size)
 
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)

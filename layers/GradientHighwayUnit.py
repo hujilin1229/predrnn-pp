@@ -17,19 +17,21 @@ class GHU():
         else:
             self.initializer = tf.random_uniform_initializer(-initializer,initializer)
 
-    def init_state(self, inputs, num_features):
+    def init_state(self, inputs, num_features, batch_size=None):
         dims = inputs.get_shape().ndims
         if dims == 4:
             batch = inputs.get_shape()[0]
+            if batch is None:
+                batch = batch_size
             height = inputs.get_shape()[1]
             width = inputs.get_shape()[2]
         else:
             raise ValueError('input tensor should be rank 4.')
         return tf.zeros([batch, height, width, num_features], dtype=tf.float32)
 
-    def __call__(self, x, z):
+    def __call__(self, x, z, batch_size=None):
         if z is None:
-            z = self.init_state(x, self.num_features)
+            z = self.init_state(x, self.num_features, batch_size)
         with tf.variable_scope(self.layer_name):
             z_concat = tf.layers.conv2d(
                 z, self.num_features*2,

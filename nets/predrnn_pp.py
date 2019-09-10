@@ -4,8 +4,9 @@ import tensorflow as tf
 from layers.GradientHighwayUnit import GHU as ghu
 from layers.CausalLSTMCell import CausalLSTMCell as cslstm
 
+
 def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
-        seq_length=20, input_length=10, tln=True):
+        seq_length=20, input_length=10, tln=True, batch_size=None):
 
     gen_images = []
     lstm = []
@@ -24,7 +25,8 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
                           num_hidden_in,
                           num_hidden[i],
                           shape,
-                          tln=tln)
+                          tln=tln,
+                          batch_size=batch_size)
         lstm.append(new_cell)
         cell.append(None)
         hidden.append(None)

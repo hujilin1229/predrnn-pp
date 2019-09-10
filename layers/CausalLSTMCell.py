@@ -5,7 +5,7 @@ from layers.TensorLayerNorm import tensor_layer_norm
 
 class CausalLSTMCell():
     def __init__(self, layer_name, filter_size, num_hidden_in, num_hidden_out,
-                 seq_shape, forget_bias=1.0, tln=False, initializer=0.001):
+                 seq_shape, forget_bias=1.0, tln=False, initializer=0.001, batch_size=None):
         """Initialize the Causal LSTM cell.
         Args:
             layer_name: layer names for different lstm layers.
@@ -21,6 +21,8 @@ class CausalLSTMCell():
         self.num_hidden_in = num_hidden_in
         self.num_hidden = num_hidden_out
         self.batch = seq_shape[0]
+        if self.batch is None:
+            self.batch = batch_size
         self.height = seq_shape[2]
         self.width = seq_shape[3]
         self.layer_norm = tln
