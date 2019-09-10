@@ -20,9 +20,9 @@ class GHU():
     def init_state(self, inputs, num_features, batch_size=None):
         dims = inputs.get_shape().ndims
         if dims == 4:
-            batch = inputs.get_shape()[0]
-            if batch is None:
-                batch = batch_size
+            # batch = inputs.get_shape()[0]
+            # if batch is None:
+            batch = batch_size
             height = inputs.get_shape()[1]
             width = inputs.get_shape()[2]
         else:

@@ -20,9 +20,9 @@ class CausalLSTMCell():
         self.filter_size = filter_size
         self.num_hidden_in = num_hidden_in
         self.num_hidden = num_hidden_out
-        self.batch = seq_shape[0]
-        if self.batch is None:
-            self.batch = batch_size
+        # self.batch = seq_shape[0]
+        # if self.batch is None:
+        self.batch = batch_size
         self.height = seq_shape[2]
         self.width = seq_shape[3]
         self.layer_norm = tln
