@@ -15,9 +15,6 @@ class InputHandle:
         self.input_data_type = input_param.get('input_data_type', 'float32')
         self.output_data_type = input_param.get('output_data_type', 'float32')
         self.num_files = input_param['num_files']
-        # self.patch_size_width = input_param['patch_size_width']
-        # self.patch_size_height = input_param['patch_size_height']
-
         self.seq_len = input_param['seq_len']
         self.horizon = input_param['horizon']
         self.mode = mode
@@ -55,22 +52,19 @@ class InputHandle:
 
     def get_batch(self):
         data = next(iter(self.data_loader))
-        data = data.squeeze(0).numpy()
+        data = data.numpy().astype(self.input_data_type)
         num_files, num_data, height, width, channel = data.shape
         num_batch_per_file = num_data // (self.seq_len + self.horizon)
-        batch = data[:, :num_files*(self.seq_len + self.horizon)].reshape(
+        batch = data[:, :num_batch_per_file*(self.seq_len + self.horizon)].reshape(
             num_files * num_batch_per_file, (self.seq_len+self.horizon), height, width, -1)
 
         return batch
 
     def get_test_batch(self, indices):
+        # num of batches: len(indices)
         data = next(iter(self.data_loader))
-        data = data.squeeze(0).numpy()
-        data = data[:, indices, ...]
+        data = data.squeeze(0).numpy().astype(self.input_data_type)
+        data = [data[i-self.seq_len:i+self.horizon] for i in indices]
+        data = np.stack(data, axis=0)
 
-        num_files, num_data, height, width, channel = data.shape
-        num_batch_per_file = num_data // (self.seq_len + self.horizon)
-        batch = data[:, :num_files*(self.seq_len + self.horizon)].reshape(
-            num_files * num_batch_per_file, (self.seq_len+self.horizon), height, width, -1)
-
-        return batch
+        return data

@@ -205,13 +205,13 @@ def main(argv=None):
 
         FLAGS.img_height = ims.shape[2]
         FLAGS.img_width = ims.shape[3]
-
+        FLAGS.batch_size = ims.shape[0]
         if itr < 50000:
             eta -= delta
         else:
             eta = 0.0
         random_flip = np.random.random_sample(
-            (FLAGS.batch_size, FLAGS.seq_length-FLAGS.input_length))
+            (FLAGS.batch_size, FLAGS.seq_length-FLAGS.input_length-1))
         true_token = (random_flip < eta)
         #true_token = (random_flip < pow(base,itr))
         ones = np.ones((FLAGS.img_height,
@@ -222,7 +222,7 @@ def main(argv=None):
                           int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
         mask_true = []
         for i in range(FLAGS.batch_size):
-            for j in range(FLAGS.seq_length-FLAGS.input_length):
+            for j in range(FLAGS.seq_length-FLAGS.input_length-1):
                 if true_token[i,j]:
                     mask_true.append(ones)
                 else:
