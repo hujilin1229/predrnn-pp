@@ -120,7 +120,7 @@ class Model(object):
             gen_ims = output_list[0]
             loss = output_list[1]
             pred_ims = gen_ims[:,FLAGS.input_length-1:]
-            self.loss_train = loss # / FLAGS.batch_size
+            self.loss_train = loss
             # gradients
             all_params = tf.trainable_variables()
             grads.append(tf.gradients(loss, all_params))
@@ -232,6 +232,8 @@ def main(argv=None):
                                            int(FLAGS.img_width),
                                            int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
         cost = model.train(ims, lr, mask_true, batch_size)
+        cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height*
+                       FLAGS.patch_size_width*FLAGS.img_channel * (FLAGS.seq_length - 1))
         if FLAGS.reverse_input:
             ims_rev = ims[:,::-1]
             cost += model.train(ims_rev, lr, mask_true, batch_size)
