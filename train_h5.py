@@ -77,8 +77,8 @@ tf.app.flags.DEFINE_float('lr', 0.001,
                           'base learning rate.')
 tf.app.flags.DEFINE_boolean('reverse_input', True,
                             'whether to reverse the input frames while training.')
-tf.app.flags.DEFINE_integer('batch_size', 8,
-                            'batch size for training.')
+tf.app.flags.DEFINE_integer('batch_file', 1,
+                            'num of file per batch for training.')
 tf.app.flags.DEFINE_integer('max_iterations', 80000,
                             'max num of steps.')
 tf.app.flags.DEFINE_integer('display_interval', 1,
@@ -92,14 +92,14 @@ class Model(object):
     def __init__(self):
         # inputs
         self.x = tf.placeholder(tf.float32,
-                                [FLAGS.batch_size,
+                                [-1,
                                  FLAGS.seq_length,
                                  FLAGS.img_height,
                                  FLAGS.img_width,
                                  int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)])
 
         self.mask_true = tf.placeholder(tf.float32,
-                                        [FLAGS.batch_size,
+                                        [-1,
                                          FLAGS.seq_length-FLAGS.input_length-1,
                                          FLAGS.img_height,
                                          FLAGS.img_width,
@@ -175,7 +175,7 @@ def main(argv=None):
     # load data
     train_input_handle, test_input_handle = datasets_factory.data_provider(
         FLAGS.dataset_name, train_data_paths, valid_data_paths,
-        FLAGS.batch_size, True, FLAGS.down_sample, FLAGS.input_length, FLAGS.seq_length - FLAGS.input_length)
+        FLAGS.batch_file, True, FLAGS.input_length, FLAGS.seq_length - FLAGS.input_length)
 
     cities = ['Berlin', 'Istanbul', 'Moscow']
     # The following indicies are the start indicies of the 3 images to predict in the 288 time bins (0 to 287)
@@ -245,6 +245,7 @@ def main(argv=None):
 
         if itr % FLAGS.test_interval == 0:
             print('test...', flush=True)
+            FLAGS.batch_size = len(indicies)
             test_input_handle.begin(do_shuffle = False)
             res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
             os.mkdir(res_path)
@@ -264,8 +265,10 @@ def main(argv=None):
                                   FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
-                test_ims = test_input_handle.get_batch()
+                # test_ims = test_input_handle.get_batch()
+                test_ims = test_input_handle.get_test_batch(indicies)
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
+
                 img_gen = model.test(test_dat, mask_true)
 
                 # concat outputs of different gpus along batch

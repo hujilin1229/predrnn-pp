@@ -11,7 +11,7 @@ datasets_map = {
 }
 
 def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
-                  is_training=True, patch_size_width=4, patch_size_height=5, seq_len=12, horizon=3):
+                  is_training=True, seq_len=12, horizon=3):
     '''Given a dataset name and returns a Dataset.
     Args:
         dataset_name: String, the name of the dataset.
