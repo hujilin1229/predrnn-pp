@@ -45,7 +45,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
                 inputs = mask_true[:,t-input_length, ...]*images[:,t, ...] + (1-mask_true[:,t-input_length, ...])*x_gen
 
             hidden[0], cell[0], mem = lstm[0](inputs, hidden[0], cell[0], mem)
-            z_t = gradient_highway(hidden[0], z_t)
+            z_t = gradient_highway(hidden[0], z_t, batch_size)
             hidden[1], cell[1], mem = lstm[1](z_t, hidden[1], cell[1], mem)
 
             for i in range(2, num_layers):
