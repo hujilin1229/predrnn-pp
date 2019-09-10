@@ -1,7 +1,7 @@
 from data_provider import mnist, traffic4cast_raw
 import h5py
 import numpy as np
-import cv2
+# import cv2
 
 datasets_map = {
     'mnist': mnist,
@@ -93,7 +93,7 @@ def test_validation_provider(data_file, indices, down_sample=4, seq_len=12, hori
             tmp_data = data[i, j, :, :]
             n_rows, n_cols = tmp_data.shape
             # down sample the image
-            tmp_data = cv2.resize(tmp_data, (n_cols // down_sample, n_rows // down_sample))
+            # tmp_data = cv2.resize(tmp_data, (n_cols // down_sample, n_rows // down_sample))
             input_raw_data[j].append(tmp_data)
 
     # stack volume, speed and heading together
