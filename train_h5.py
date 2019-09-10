@@ -242,6 +242,7 @@ def main(argv=None):
         if itr % FLAGS.display_interval == 0:
             print('itr: ' + str(itr), flush=True)
             print('training loss: ' + str(cost), flush=True)
+        train_input_handle.next()
 
         if itr % FLAGS.test_interval == 0:
             print('test...', flush=True)
@@ -294,23 +295,23 @@ def main(argv=None):
                         # score, _ = compare_ssim(pred_frm[b],real_frm[b],full=True)
                         # ssim[i] += score
 
-                # save prediction examples
-                if batch_id <= 10:
-                    path = os.path.join(res_path, str(batch_id))
-                    os.mkdir(path)
-                    for i in range(FLAGS.seq_length):
-                        name = 'gt' + str(i+1) + '.png'
-                        file_name = os.path.join(path, name)
-                        img_gt = np.uint8(test_ims[0,i,:,:,:] * 255)
-                        cv2.imwrite(file_name, img_gt)
-                    for i in range(FLAGS.seq_length-FLAGS.input_length):
-                        name = 'pd' + str(i+1+FLAGS.input_length) + '.png'
-                        file_name = os.path.join(path, name)
-                        img_pd = img_gen[0,i,:,:,:]
-                        img_pd = np.maximum(img_pd, 0)
-                        img_pd = np.minimum(img_pd, 1)
-                        img_pd = np.uint8(img_pd * 255)
-                        cv2.imwrite(file_name, img_pd)
+                # # save prediction examples
+                # if batch_id <= 10:
+                #     path = os.path.join(res_path, str(batch_id))
+                #     os.mkdir(path)
+                #     for i in range(FLAGS.seq_length):
+                #         name = 'gt' + str(i+1) + '.png'
+                #         file_name = os.path.join(path, name)
+                #         img_gt = np.uint8(test_ims[0,i,:,:,:] * 255)
+                #         cv2.imwrite(file_name, img_gt)
+                #     for i in range(FLAGS.seq_length-FLAGS.input_length):
+                #         name = 'pd' + str(i+1+FLAGS.input_length) + '.png'
+                #         file_name = os.path.join(path, name)
+                #         img_pd = img_gen[0,i,:,:,:]
+                #         img_pd = np.maximum(img_pd, 0)
+                #         img_pd = np.minimum(img_pd, 1)
+                #         img_pd = np.uint8(img_pd * 255)
+                #         cv2.imwrite(file_name, img_pd)
                 test_input_handle.next()
             avg_mse = avg_mse / (batch_id*FLAGS.batch_size)
             print('mse per seq: ' + str(avg_mse), flush=True)
@@ -329,59 +330,59 @@ def main(argv=None):
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(sharp[i], flush=True)
 
-            # test with file
-            valid_data_path = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,'{}_validation'.format(FLAGS.dataset_name))
-            files = list_filenames(valid_data_path)
-            output_all = []
-            labels_all = []
-            for f in files:
-                valid_file = valid_data_path + '/' + f
-                valid_input, raw_output = datasets_factory.test_validation_provider(
-                    valid_file, indicies, down_sample=FLAGS.down_sample, seq_len=FLAGS.input_length,
-                    horizon=FLAGS.seq_length - FLAGS.input_length)
-                valid_input = valid_input.astype(np.float) / 255.0
-                labels_all.append(raw_output)
-                num_tests = len(indicies)
-                num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
-                for i in range(num_partitions):
-                    valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
-                    num_input_i = valid_input_i.shape[0]
-                    if num_input_i < FLAGS.batch_size:
-                        zeros_fill_in = np.zeros((FLAGS.batch_size - num_input_i,
-                                                  FLAGS.seq_length,
-                                                  FLAGS.img_height,
-                                                  FLAGS.img_width,
-                                                  FLAGS.img_channel))
-                        valid_input_i = np.concatenate([valid_input_i, zeros_fill_in], axis=0)
-                    img_gen = model.test(valid_input_i, mask_true)
-                    output_all.append(img_gen[0][:num_input_i])
-
-            output_all = np.concatenate(output_all, axis=0)
-            labels_all = np.concatenate(labels_all, axis=0)
-            origin_height = labels_all.shape[-2]
-            origin_width = labels_all.shape[-3]
-            output_resize = []
-            for i in range(output_all.shape[0]):
-                output_i = []
-                for j in range(output_all.shape[1]):
-                    tmp_data = output_all[i, j, 1, :, :]
-                    tmp_data = cv2.resize(tmp_data, (origin_height, origin_width))
-                    tmp_data = np.expand_dims(tmp_data, axis=0)
-                    output_i.append(tmp_data)
-                output_i = np.stack(output_i, axis=0)
-                output_resize.append(output_i)
-            output_resize = np.stack(output_resize, axis=0)
-
-            output_resize *= 255.0
-            labels_all = np.expand_dims(labels_all[..., 1], axis=2)
-            valid_mse = masked_mse_np(output_resize, labels_all, np.nan)
-
-            print("validation mse is ", valid_mse, flush=True)
+            # # test with file
+            # valid_data_path = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name,'{}_validation'.format(FLAGS.dataset_name))
+            # files = list_filenames(valid_data_path)
+            # output_all = []
+            # labels_all = []
+            # for f in files:
+            #     valid_file = valid_data_path + '/' + f
+            #     valid_input, raw_output = datasets_factory.test_validation_provider(
+            #         valid_file, indicies, down_sample=FLAGS.down_sample, seq_len=FLAGS.input_length,
+            #         horizon=FLAGS.seq_length - FLAGS.input_length)
+            #     valid_input = valid_input.astype(np.float) / 255.0
+            #     labels_all.append(raw_output)
+            #     num_tests = len(indicies)
+            #     num_partitions = int(np.ceil(num_tests / FLAGS.batch_size))
+            #     for i in range(num_partitions):
+            #         valid_input_i = valid_input[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
+            #         num_input_i = valid_input_i.shape[0]
+            #         if num_input_i < FLAGS.batch_size:
+            #             zeros_fill_in = np.zeros((FLAGS.batch_size - num_input_i,
+            #                                       FLAGS.seq_length,
+            #                                       FLAGS.img_height,
+            #                                       FLAGS.img_width,
+            #                                       FLAGS.img_channel))
+            #             valid_input_i = np.concatenate([valid_input_i, zeros_fill_in], axis=0)
+            #         img_gen = model.test(valid_input_i, mask_true)
+            #         output_all.append(img_gen[0][:num_input_i])
+            #
+            # output_all = np.concatenate(output_all, axis=0)
+            # labels_all = np.concatenate(labels_all, axis=0)
+            # origin_height = labels_all.shape[-2]
+            # origin_width = labels_all.shape[-3]
+            # output_resize = []
+            # for i in range(output_all.shape[0]):
+            #     output_i = []
+            #     for j in range(output_all.shape[1]):
+            #         tmp_data = output_all[i, j, 1, :, :]
+            #         tmp_data = cv2.resize(tmp_data, (origin_height, origin_width))
+            #         tmp_data = np.expand_dims(tmp_data, axis=0)
+            #         output_i.append(tmp_data)
+            #     output_i = np.stack(output_i, axis=0)
+            #     output_resize.append(output_i)
+            # output_resize = np.stack(output_resize, axis=0)
+            #
+            # output_resize *= 255.0
+            # labels_all = np.expand_dims(labels_all[..., 1], axis=2)
+            # valid_mse = masked_mse_np(output_resize, labels_all, np.nan)
+            #
+            # print("validation mse is ", valid_mse, flush=True)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
 
-        train_input_handle.next()
+
 
 if __name__ == '__main__':
     tf.app.run()
