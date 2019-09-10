@@ -53,7 +53,7 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
         else:
             return test_input_handle
     else:
-        test_input_param = {'paths': valid_data_list,
+        test_input_param = {'paths': valid_data_paths,
                             'num_files': batch_size,
                             'input_data_type': 'float32',
                             'output_data_type': 'float32',
@@ -63,7 +63,7 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
         test_input_handle = datasets_map[dataset_name].InputHandle(test_input_param, 'valid')
         test_input_handle.begin(do_shuffle = False)
         if is_training:
-            train_input_param = {'paths': train_data_list,
+            train_input_param = {'paths': train_data_paths,
                                  'num_files': batch_size,
                                  'input_data_type': 'float32',
                                  'output_data_type': 'float32',
