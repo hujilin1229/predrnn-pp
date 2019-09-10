@@ -118,7 +118,7 @@ class Model(object):
             gen_ims = output_list[0]
             loss = output_list[1]
             pred_ims = gen_ims[:,FLAGS.input_length-1:]
-            self.loss_train = loss / FLAGS.batch_size
+            self.loss_train = loss # / FLAGS.batch_size
             # gradients
             all_params = tf.trainable_variables()
             grads.append(tf.gradients(loss, all_params))
