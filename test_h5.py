@@ -188,7 +188,7 @@ def main(argv=None):
     #     # tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     #     tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_test')
+    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
     sub_files = preprocess.list_filenames(test_data_paths, [])
 
     output_path = './Results/predrnn/'
@@ -202,7 +202,6 @@ def main(argv=None):
     if FLAGS.dataset_name == 'Berlin':
         indicies = utcPlus2
 
-    # TODO: implement the restore for tensorflow
     print("Initializing models", flush=True)
     model = Model()
 
@@ -228,7 +227,7 @@ def main(argv=None):
             img_gen = np.minimum(img_gen, 1)
             img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
             img_gen = np.uint8(img_gen*255)
-            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
+            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_validation', f)
             preprocess.write_data(img_gen, outfile)
 
     print("Finished...")
