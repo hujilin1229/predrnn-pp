@@ -74,14 +74,14 @@ class HDF5Dataset(data.Dataset):
                 idx = -1
                 if load_data:
                     # add data to the data cache
-                    idx = self._add_to_cache(ds.value, file_path)
+                    idx = self._add_to_cache(ds[()], file_path)
 
                 # type is derived from the name of the dataset; we expect the dataset
                 # name to have a name such as 'data' or 'label' to identify its type
                 # we also store the shape of the data in case we need it
                     self.data_info.append(
                         {'file_path': file_path, 'type': dname,
-                         'shape': ds.value.shape, 'cache_idx': idx})
+                         'shape': ds[()].shape, 'cache_idx': idx})
                 else:
                     self.data_info.append(
                         {'file_path': file_path, 'type': dname,
@@ -97,7 +97,7 @@ class HDF5Dataset(data.Dataset):
                 # for dname, ds in group.items():
                 # add data to the data cache and retrieve
                 # the cache index
-                idx = self._add_to_cache(ds.value, file_path)
+                idx = self._add_to_cache(ds[()], file_path)
 
                 # find the beginning index of the hdf5 file we are looking for
                 file_idx = next(i for i, v in enumerate(self.data_info) if v['file_path'] == file_path)
