@@ -210,7 +210,7 @@ def main(argv=None):
         with h5py.File(os.path.join(test_data_paths, f), 'r') as h5_file:
             data = h5_file['array'][()]
             # get relevant training data pieces
-            data = [data[y - FLAGS.seq_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
+            data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
             data = np.stack(data, axis=0)
             # type casting
             test_dat = data.astype(np.float32) / 255.0
