@@ -12,9 +12,9 @@ class InputHandle:
         self.num_files = input_param['num_files']
         self.seq_len = input_param['seq_len']
         self.horizon = input_param['horizon']
-        self.mode = mode
+        # self.mode = mode
         # self.data = {}
-        self.indices = {}
+        # self.indices = {}
         self.current_position = 0
         self.current_batch_size = 0
         self.current_batch_indices = []
@@ -33,6 +33,7 @@ class InputHandle:
         loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': 6}
         dataset = HDF5Dataset(self.paths, recursive=False, load_data=False)
         self.data_loader = data.DataLoader(dataset, **loader_params)
+        self.current_position = 0
 
     def next(self):
         self.current_position += 1
