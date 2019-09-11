@@ -21,17 +21,14 @@ class InputHandle:
         self.current_input_length = 0
         self.current_output_length = 0
 
-    # @property
-    # def dims(self):
-    #     return self.data['dims'][0]
-
     def total(self):
         return len(self.data_loader)
 
     def begin(self, do_shuffle = True):
         # construct dataset
-        loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': 6}
-        dataset = HDF5Dataset(self.paths, recursive=False, load_data=False)
+        cache = 6
+        loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': cache}
+        dataset = HDF5Dataset(self.paths, recursive=False, load_data=False, data_cache_size=cache)
         self.data_loader = data.DataLoader(dataset, **loader_params)
         self.current_position = 0
 
