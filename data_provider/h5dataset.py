@@ -27,7 +27,7 @@ class HDF5Dataset(data.Dataset):
            for x in data_loader:
     """
 
-    def __init__(self, file_path, recursive, load_data, data_cache_size=3, transform=None):
+    def __init__(self, file_path, recursive, load_data=False, data_cache_size=3, transform=None):
         super().__init__()
         self.data_info = []
         self.data_cache = {}
