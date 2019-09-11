@@ -218,7 +218,7 @@ def main(argv=None):
         num_batches = imss.shape[0]
         print("num of batches is ", num_batches)
         for bi in range(0, num_batches, FLAGS.batch_size):
-            ims = imss[bi*FLAGS.batch_size:(bi+1)*FLAGS.batch_size]
+            ims = imss[bi:bi+FLAGS.batch_size]
             FLAGS.img_height = ims.shape[2]
             FLAGS.img_width = ims.shape[3]
             batch_size = ims.shape[0]
