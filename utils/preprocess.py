@@ -4,6 +4,7 @@ import numpy as np
 import os
 import datetime
 import re
+import h5py
 
 def reshape_patch(img_tensor, patch_size_width, patch_size_height=None):
     if patch_size_height is None:
@@ -81,3 +82,20 @@ def list_filenames(directory, excluded_dates=[]):
         filenames = [x for x in filenames if return_date(x) not in excluded_dates]
 
     return filenames
+
+def write_data(data, filename):
+    f = h5py.File(filename, 'w', libver='latest')
+    dset = f.create_dataset('array', shape=(data.shape), data = data, compression='gzip', compression_opts=9)
+    f.close()
+
+def create_directory_structure(root):
+    berlin = os.path.join(root, "Berlin","Berlin_test")
+    istanbul = os.path.join(root, "Istanbul","Istanbul_test")
+    moscow = os.path.join(root, "Moscow", "Moscow_test")
+    try:
+        os.makedirs(berlin)
+        os.makedirs(istanbul)
+        os.makedirs(moscow)
+    except OSError:
+        print("failed to create directory structure")
+        # sys.exit(2)

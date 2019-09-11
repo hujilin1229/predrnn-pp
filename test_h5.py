@@ -8,6 +8,7 @@ from nets import models_factory
 from data_provider import datasets_factory
 from utils import preprocess
 from utils import metrics
+import h5py
 
 def masked_mse_np(preds, labels, null_val=np.nan):
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -184,14 +185,11 @@ def main(argv=None):
         # tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
         tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_training')
-    valid_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
-    # load data
-    train_input_handle, test_input_handle = datasets_factory.data_provider(
-        FLAGS.dataset_name, train_data_paths, valid_data_paths,
-        FLAGS.batch_file, True, FLAGS.input_length, FLAGS.seq_length - FLAGS.input_length)
+    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_test')
+    sub_files = preprocess.list_filenames(test_data_paths, [])
 
-    cities = ['Berlin', 'Istanbul', 'Moscow']
+    output_path = './Results/predrnn/'
+    preprocess.create_directory_structure(output_path)
     # The following indicies are the start indicies of the 3 images to predict in the 288 time bins (0 to 287)
     # in each daily test file. These are time zone dependent. Berlin lies in UTC+2 whereas Istanbul and Moscow
     # lie in UTC+3.
@@ -201,138 +199,32 @@ def main(argv=None):
     if FLAGS.dataset_name == 'Berlin':
         indicies = utcPlus2
 
-    # dims = train_input_handle.dims
+    # TODO: implement the restore for tensorflow
     print("Initializing models", flush=True)
     model = Model()
-    lr = FLAGS.lr
 
-    delta = 0.00002
-    base = 0.99998
-    eta = 1
-
-    for itr in range(1, FLAGS.max_iterations + 1):
-        if train_input_handle.no_batch_left():
-            train_input_handle.begin(do_shuffle=True)
-        imss = train_input_handle.get_batch()
-        imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
-        num_batches = imss.shape[0]
-
-        for bi in range(0, num_batches-1, FLAGS.batch_size):
-            ims = imss[bi*FLAGS.batch_size:(bi+1)*FLAGS.batch_size]
-            FLAGS.img_height = ims.shape[2]
-            FLAGS.img_width = ims.shape[3]
-            batch_size = ims.shape[0]
-            print(batch_size)
-            if itr < 50000:
-                eta -= delta
-            else:
-                eta = 0.0
-            random_flip = np.random.random_sample(
-                (batch_size, FLAGS.seq_length-FLAGS.input_length-1))
-            true_token = (random_flip < eta)
-            #true_token = (random_flip < pow(base,itr))
-            ones = np.ones((FLAGS.img_height,
-                            FLAGS.img_width,
-                            int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            zeros = np.zeros((int(FLAGS.img_height),
-                              int(FLAGS.img_width),
-                              int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            mask_true = []
-            for i in range(batch_size):
-                for j in range(FLAGS.seq_length-FLAGS.input_length-1):
-                    if true_token[i,j]:
-                        mask_true.append(ones)
-                    else:
-                        mask_true.append(zeros)
-            mask_true = np.array(mask_true)
-            mask_true = np.reshape(mask_true, (batch_size,
-                                               FLAGS.seq_length-FLAGS.input_length-1,
-                                               int(FLAGS.img_height),
-                                               int(FLAGS.img_width),
-                                               int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            cost = model.train(ims, lr, mask_true, batch_size)
-
-            if FLAGS.reverse_input:
-                ims_rev = ims[:,::-1]
-                cost += model.train(ims_rev, lr, mask_true, batch_size)
-                cost = cost/2
-
-            cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
-                           FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
-            if itr % FLAGS.display_interval == 0:
-                print('itr: ' + str(itr), flush=True)
-                print('training loss: ' + str(cost), flush=True)
-
-        train_input_handle.next()
-        if itr % FLAGS.test_interval == 0:
-            print('test...', flush=True)
+    for f in sub_files:
+        with h5py.File(os.path.join(test_data_paths, f), 'r') as h5_file:
+            data = h5_file['array'][()]
+            # get relevant training data pieces
+            data = [data[y - FLAGS.seq_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
+            data = np.stack(data, axis=0)
+            # type casting
+            test_dat = data.astype(np.float32) / 255.0
             batch_size = len(indicies)
-            test_input_handle.begin(do_shuffle = False)
-            # res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
-            # os.mkdir(res_path)
-            avg_mse = 0
-            batch_id = 0
-            img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                img_mse.append(0)
-                ssim.append(0)
-                psnr.append(0)
-                fmae.append(0)
-                sharp.append(0)
             mask_true = np.zeros((batch_size,
                                   FLAGS.seq_length-FLAGS.input_length-1,
                                   FLAGS.img_height,
                                   FLAGS.img_width,
                                   FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
-            while(test_input_handle.no_batch_left() == False):
-                batch_id = batch_id + 1
-                # test_ims = test_input_handle.get_batch()
-                test_ims = test_input_handle.get_test_batch(indicies)
-                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
+            img_gen = model.test(test_dat, mask_true, batch_size)
+            # concat outputs of different gpus along batch
+            img_gen = np.concatenate(img_gen)
+            img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
+            img_gen = np.uint8(img_gen*255)
+            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
+            preprocess.write_data(img_gen, outfile)
 
-                img_gen = model.test(test_dat, mask_true, batch_size)
-
-                # concat outputs of different gpus along batch
-                img_gen = np.concatenate(img_gen)
-                img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
-                # MSE per frame
-                for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    x = test_ims[:,i + FLAGS.input_length,:,:,0]
-                    gx = img_gen[:,i,:,:, :]
-                    fmae[i] += metrics.batch_mae_frame_float(gx, x)
-                    gx = np.maximum(gx, 0)
-                    gx = np.minimum(gx, 1)
-                    mse = np.square(x - gx).sum()
-                    img_mse[i] += mse
-                    avg_mse += mse
-
-                    real_frm = np.uint8(x * 255)
-                    pred_frm = np.uint8(gx * 255)
-                    psnr[i] += metrics.batch_psnr(pred_frm, real_frm)
-
-                test_input_handle.next()
-
-            avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
-                                 FLAGS.img_width * FLAGS.patch_size_height *
-                                 FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
-            print('mse per seq: ' + str(avg_mse), flush=True)
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(img_mse[i] / (batch_id*batch_size))
-            psnr = np.asarray(psnr, dtype=np.float32)/batch_id
-            fmae = np.asarray(fmae, dtype=np.float32)/batch_id
-            sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
-            print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(psnr[i], flush=True)
-            print('fmae per frame: ' + str(np.mean(fmae)))
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(fmae[i], flush=True)
-            print('sharpness per frame: ' + str(np.mean(sharp)))
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(sharp[i], flush=True)
-
-        if itr % FLAGS.snapshot_interval == 0:
-            model.save(itr)
 
 if __name__ == '__main__':
     tf.app.run()
