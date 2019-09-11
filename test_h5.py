@@ -237,6 +237,7 @@ def main(argv=None):
 
     mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3)
 
+    print(FLAGS.dataset_name)
     print("MSE: ", mse)
     print("Finished...")
 
