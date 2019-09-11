@@ -262,6 +262,7 @@ def main(argv=None):
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
+                print("Batch size: ", batch_size)
 
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
