@@ -202,7 +202,6 @@ def main(argv=None):
         indicies = utcPlus2
 
     # dims = train_input_handle.dims
-
     print("Initializing models", flush=True)
     model = Model()
     lr = FLAGS.lr
@@ -223,6 +222,7 @@ def main(argv=None):
             FLAGS.img_height = ims.shape[2]
             FLAGS.img_width = ims.shape[3]
             batch_size = ims.shape[0]
+            print(batch_size)
             if itr < 50000:
                 eta -= delta
             else:
