@@ -251,77 +251,77 @@ def main(argv=None):
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
-            train_input_handle.next()
 
-            if itr % FLAGS.test_interval == 0:
-                print('test...', flush=True)
-                batch_size = len(indicies)
-                test_input_handle.begin(do_shuffle = False)
-                res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
-                os.mkdir(res_path)
-                avg_mse = 0
-                batch_id = 0
-                img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
+        train_input_handle.next()
+        if itr % FLAGS.test_interval == 0:
+            print('test...', flush=True)
+            batch_size = len(indicies)
+            test_input_handle.begin(do_shuffle = False)
+            res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
+            os.mkdir(res_path)
+            avg_mse = 0
+            batch_id = 0
+            img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
+            for i in range(FLAGS.seq_length - FLAGS.input_length):
+                img_mse.append(0)
+                ssim.append(0)
+                psnr.append(0)
+                fmae.append(0)
+                sharp.append(0)
+            mask_true = np.zeros((batch_size,
+                                  FLAGS.seq_length-FLAGS.input_length-1,
+                                  FLAGS.img_height,
+                                  FLAGS.img_width,
+                                  FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
+            while(test_input_handle.no_batch_left() == False):
+                batch_id = batch_id + 1
+                # test_ims = test_input_handle.get_batch()
+                test_ims = test_input_handle.get_test_batch(indicies)
+                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
+
+                img_gen = model.test(test_dat, mask_true, batch_size)
+
+                # concat outputs of different gpus along batch
+                img_gen = np.concatenate(img_gen)
+                img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
+                # MSE per frame
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    img_mse.append(0)
-                    ssim.append(0)
-                    psnr.append(0)
-                    fmae.append(0)
-                    sharp.append(0)
-                mask_true = np.zeros((batch_size,
-                                      FLAGS.seq_length-FLAGS.input_length-1,
-                                      FLAGS.img_height,
-                                      FLAGS.img_width,
-                                      FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
-                while(test_input_handle.no_batch_left() == False):
-                    batch_id = batch_id + 1
-                    # test_ims = test_input_handle.get_batch()
-                    test_ims = test_input_handle.get_test_batch(indicies)
-                    test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
+                    x = test_ims[:,i + FLAGS.input_length,:,:,0]
+                    gx = img_gen[:,i,:,:,0]
+                    fmae[i] += metrics.batch_mae_frame_float(gx, x)
+                    gx = np.maximum(gx, 0)
+                    gx = np.minimum(gx, 1)
+                    mse = np.square(x - gx).sum()
+                    img_mse[i] += mse
+                    avg_mse += mse
 
-                    img_gen = model.test(test_dat, mask_true, batch_size)
+                    real_frm = np.uint8(x * 255)
+                    pred_frm = np.uint8(gx * 255)
+                    psnr[i] += metrics.batch_psnr(pred_frm, real_frm)
 
-                    # concat outputs of different gpus along batch
-                    img_gen = np.concatenate(img_gen)
-                    img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
-                    # MSE per frame
-                    for i in range(FLAGS.seq_length - FLAGS.input_length):
-                        x = test_ims[:,i + FLAGS.input_length,:,:,0]
-                        gx = img_gen[:,i,:,:,0]
-                        fmae[i] += metrics.batch_mae_frame_float(gx, x)
-                        gx = np.maximum(gx, 0)
-                        gx = np.minimum(gx, 1)
-                        mse = np.square(x - gx).sum()
-                        img_mse[i] += mse
-                        avg_mse += mse
+                test_input_handle.next()
 
-                        real_frm = np.uint8(x * 255)
-                        pred_frm = np.uint8(gx * 255)
-                        psnr[i] += metrics.batch_psnr(pred_frm, real_frm)
+            avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
+                                 FLAGS.img_width * FLAGS.patch_size_height *
+                                 FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
+            print('mse per seq: ' + str(avg_mse), flush=True)
+            for i in range(FLAGS.seq_length - FLAGS.input_length):
+                print(img_mse[i] / (batch_id*batch_size))
+            psnr = np.asarray(psnr, dtype=np.float32)/batch_id
+            fmae = np.asarray(fmae, dtype=np.float32)/batch_id
+            sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
+            print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
+            for i in range(FLAGS.seq_length - FLAGS.input_length):
+                print(psnr[i], flush=True)
+            print('fmae per frame: ' + str(np.mean(fmae)))
+            for i in range(FLAGS.seq_length - FLAGS.input_length):
+                print(fmae[i], flush=True)
+            print('sharpness per frame: ' + str(np.mean(sharp)))
+            for i in range(FLAGS.seq_length - FLAGS.input_length):
+                print(sharp[i], flush=True)
 
-                    test_input_handle.next()
-
-                avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
-                                     FLAGS.img_width * FLAGS.patch_size_height *
-                                     FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
-                print('mse per seq: ' + str(avg_mse), flush=True)
-                for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    print(img_mse[i] / (batch_id*batch_size))
-                psnr = np.asarray(psnr, dtype=np.float32)/batch_id
-                fmae = np.asarray(fmae, dtype=np.float32)/batch_id
-                sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
-                print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
-                for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    print(psnr[i], flush=True)
-                print('fmae per frame: ' + str(np.mean(fmae)))
-                for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    print(fmae[i], flush=True)
-                print('sharpness per frame: ' + str(np.mean(sharp)))
-                for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    print(sharp[i], flush=True)
-
-            if itr % FLAGS.snapshot_interval == 0:
-                model.save(itr)
+        if itr % FLAGS.snapshot_interval == 0:
+            model.save(itr)
 
 if __name__ == '__main__':
     tf.app.run()
