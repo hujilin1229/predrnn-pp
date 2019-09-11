@@ -224,6 +224,8 @@ def main(argv=None):
             img_gen = model.test(test_dat, mask_true, batch_size)
             # concat outputs of different gpus along batch
             img_gen = np.concatenate(img_gen)
+            img_gen = np.maximum(img_gen, 0)
+            img_gen = np.minimum(img_gen, 1)
             img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
             img_gen = np.uint8(img_gen*255)
             outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
