@@ -178,6 +178,8 @@ def main(argv=None):
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
         tf.io.gfile.makedirs(FLAGS.save_dir)
+    else:
+        FLAGS.pretrained_model = FLAGS.save_dir
     if not tf.io.gfile.exists(FLAGS.gen_frm_dir):
         # tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
         tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
