@@ -34,9 +34,9 @@ tf.app.flags.DEFINE_string('train_data_paths',
 tf.app.flags.DEFINE_string('valid_data_paths',
                            './data/', # 'data/moving-mnist-example/moving-mnist-valid.npz',
                            'validation data paths.')
-tf.app.flags.DEFINE_string('save_dir', 'checkpoints/mnist_predrnn_pp',
+tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp',
                             'dir to store trained net.')
-tf.app.flags.DEFINE_string('gen_frm_dir', 'results/mnist_predrnn_pp',
+tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp',
                            'dir to store result.')
 # model
 tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
@@ -161,6 +161,9 @@ class Model(object):
         print('saved to ' + FLAGS.save_dir, flush=True)
 
 def main(argv=None):
+
+    FLAGS.save_dir += FLAGS.dataset_name
+    FLAGS.gen_frm_dir += FLAGS.dataset_name
     if tf.io.gfile.exists(FLAGS.save_dir):
         tf.io.gfile.rmtree(FLAGS.save_dir)
     tf.io.gfile.makedirs(FLAGS.save_dir)
