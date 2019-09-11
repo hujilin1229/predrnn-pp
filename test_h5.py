@@ -235,7 +235,7 @@ def main(argv=None):
             outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
             preprocess.write_data(img_gen, outfile)
 
-    mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3)
+    mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
 
     print(FLAGS.dataset_name)
     print("MSE: ", mse)

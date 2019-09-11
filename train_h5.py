@@ -313,6 +313,7 @@ def main(argv=None):
             avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
                                  FLAGS.img_width * FLAGS.patch_size_height *
                                  FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
+
             print('mse per seq: ' + str(avg_mse), flush=True)
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(img_mse[i] / (batch_id*batch_size))
