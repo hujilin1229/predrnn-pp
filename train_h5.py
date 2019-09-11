@@ -216,13 +216,12 @@ def main(argv=None):
         imss = train_input_handle.get_batch()
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
         num_batches = imss.shape[0]
-
+        print("num of batches is ", num_batches)
         for bi in range(0, num_batches-1, FLAGS.batch_size):
             ims = imss[bi*FLAGS.batch_size:(bi+1)*FLAGS.batch_size]
             FLAGS.img_height = ims.shape[2]
             FLAGS.img_width = ims.shape[3]
             batch_size = ims.shape[0]
-            print(batch_size)
             if itr < 50000:
                 eta -= delta
             else:
@@ -298,7 +297,7 @@ def main(argv=None):
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # MSE per frame
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
-                    x = test_ims[:,i + FLAGS.input_length,:,:,0]
+                    x = test_ims[:,i + FLAGS.input_length,:,:, :]
                     gx = img_gen[:,i,:,:, :]
                     fmae[i] += metrics.batch_mae_frame_float(gx, x)
                     gx = np.maximum(gx, 0)
