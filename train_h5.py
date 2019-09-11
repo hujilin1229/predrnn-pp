@@ -216,7 +216,6 @@ def main(argv=None):
         imss = train_input_handle.get_batch()
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
         num_batches = imss.shape[0]
-        print("num of batches is ", num_batches)
         for bi in range(0, num_batches, FLAGS.batch_size):
             ims = imss[bi:bi+FLAGS.batch_size]
             FLAGS.img_height = ims.shape[2]
@@ -261,7 +260,6 @@ def main(argv=None):
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
-                print("Batch size: ", batch_size)
 
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
