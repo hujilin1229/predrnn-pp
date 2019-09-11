@@ -266,8 +266,8 @@ def main(argv=None):
             print('test...', flush=True)
             batch_size = len(indicies)
             test_input_handle.begin(do_shuffle = False)
-            res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
-            os.mkdir(res_path)
+            # res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
+            # os.mkdir(res_path)
             avg_mse = 0
             batch_id = 0
             img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
