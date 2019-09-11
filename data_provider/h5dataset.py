@@ -66,7 +66,7 @@ class HDF5Dataset(data.Dataset):
         return len(self.get_data_infos('array'))
 
     def _add_data_infos(self, file_path, load_data):
-        with h5py.File(file_path) as h5_file:
+        with h5py.File(file_path, 'r') as h5_file:
             # Walk through all groups, extracting datasets
             for dname, ds in h5_file.items():
                 # for dname, ds in group.items():
@@ -92,7 +92,7 @@ class HDF5Dataset(data.Dataset):
         path and update the cache index in the
         data_info structure.
         """
-        with h5py.File(file_path) as h5_file:
+        with h5py.File(file_path, 'r') as h5_file:
             for dname, ds in h5_file.items():
                 # for dname, ds in group.items():
                 # add data to the data cache and retrieve

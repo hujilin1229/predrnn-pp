@@ -323,8 +323,6 @@ def main(argv=None):
             if itr % FLAGS.snapshot_interval == 0:
                 model.save(itr)
 
-
-
 if __name__ == '__main__':
     tf.app.run()
 
