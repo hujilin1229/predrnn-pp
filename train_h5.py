@@ -75,7 +75,7 @@ tf.app.flags.DEFINE_boolean('reverse_input', True,
                             'whether to reverse the input frames while training.')
 tf.app.flags.DEFINE_integer('batch_file', 1,
                             'num of file per batch for training.')
-tf.app.flags.DEFINE_integer('max_iterations', 1000,
+tf.app.flags.DEFINE_integer('max_iterations', 28500,
                             'max num of steps.')
 tf.app.flags.DEFINE_integer('display_interval', 10,
                             'number of iters showing training loss.')
