@@ -214,6 +214,7 @@ def main(argv=None):
             data = np.stack(data, axis=0)
             # type casting
             test_dat = data.astype(np.float32) / 255.0
+            test_dat = preprocess.reshape_patch(test_dat, FLAGS.patch_size_width, FLAGS.patch_size_height)
             batch_size = len(indicies)
             mask_true = np.zeros((batch_size,
                                   FLAGS.seq_length-FLAGS.input_length-1,
