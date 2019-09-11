@@ -231,6 +231,7 @@ def main(argv=None):
             outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
             preprocess.write_data(img_gen, outfile)
 
+    print("Finished...")
 
 if __name__ == '__main__':
     tf.app.run()
