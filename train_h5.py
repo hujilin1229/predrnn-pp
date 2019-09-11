@@ -217,7 +217,7 @@ def main(argv=None):
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
         num_batches = imss.shape[0]
         print("num of batches is ", num_batches)
-        for bi in range(0, num_batches-1, FLAGS.batch_size):
+        for bi in range(0, num_batches, FLAGS.batch_size):
             ims = imss[bi*FLAGS.batch_size:(bi+1)*FLAGS.batch_size]
             FLAGS.img_height = ims.shape[2]
             FLAGS.img_width = ims.shape[3]
