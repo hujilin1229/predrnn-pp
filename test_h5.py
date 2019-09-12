@@ -206,6 +206,9 @@ def main(argv=None):
     model = Model()
 
     se_total = 0.
+    se_1 = 0.
+    se_2 = 0.
+    se_3 = 0.
     for f in sub_files:
         with h5py.File(os.path.join(test_data_paths, f), 'r') as h5_file:
             data = h5_file['array'][()]
@@ -231,14 +234,25 @@ def main(argv=None):
             img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
             se_total += np.sum((img_gt - img_gen)**2)
 
+            se_1 += np.sum((img_gt[..., 0] - img_gen[..., 0]) ** 2)
+            se_2 += np.sum((img_gt[..., 1] - img_gen[..., 1]) ** 2)
+            se_3 += np.sum((img_gt[..., 2] - img_gen[..., 2]) ** 2)
+
             img_gen = np.uint8(img_gen*255)
             outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
             preprocess.write_data(img_gen, outfile)
 
     mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
 
+    mse1 = se_1 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
+    mse2 = se_2 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
+    mse3 = se_3 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
     print(FLAGS.dataset_name)
     print("MSE: ", mse)
+    print("MSE_vol: ", mse1)
+    print("MSE_sp: ", mse2)
+    print("MSE_hd: ", mse3)
+
     print("Finished...")
 
 if __name__ == '__main__':
