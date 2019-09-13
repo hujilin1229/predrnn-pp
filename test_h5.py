@@ -174,7 +174,8 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length)
+    # FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length)
+    FLAGS.save_dir += FLAGS.dataset_name
     FLAGS.pretrained_model = FLAGS.save_dir
 
     # FLAGS.save_dir += FLAGS.dataset_name
