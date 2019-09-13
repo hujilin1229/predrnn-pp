@@ -189,10 +189,10 @@ def main(argv=None):
     #     # tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     #     tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
+    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_test')
     sub_files = preprocess.list_filenames(test_data_paths, [])
 
-    output_path = './Results/predrnn/valiation/'
+    output_path = './Results/predrnn/t14/'
     preprocess.create_directory_structure(output_path)
     # The following indicies are the start indicies of the 3 images to predict in the 288 time bins (0 to 287)
     # in each daily test file. These are time zone dependent. Berlin lies in UTC+2 whereas Istanbul and Moscow
