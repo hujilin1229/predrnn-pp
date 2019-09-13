@@ -174,8 +174,8 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    # FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length)
-    FLAGS.save_dir += FLAGS.dataset_name
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length)
+    # FLAGS.save_dir += FLAGS.dataset_name
     FLAGS.pretrained_model = FLAGS.save_dir
 
     # FLAGS.save_dir += FLAGS.dataset_name
@@ -189,7 +189,7 @@ def main(argv=None):
     #     # tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     #     tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_test')
+    test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
     sub_files = preprocess.list_filenames(test_data_paths, [])
 
     output_path = './Results/predrnn/t14/'
