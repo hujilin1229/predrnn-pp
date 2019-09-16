@@ -274,6 +274,7 @@ def main(argv=None):
     pred_list = np.stack(pred_list, axis=0)
     gt_list = np.stack(gt_list, axis=0)
     array_mse = masked_mse_np(pred_list, gt_list, np.nan)
+    print("Array Shape: ", array_mse.shape)
     print("Array MSE: ", array_mse)
 
     print("Finished...")

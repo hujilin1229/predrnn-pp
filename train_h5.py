@@ -339,7 +339,8 @@ def main(argv=None):
             print("The volume mse is ", volume_mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
-
+            print("Indices: ", indicies)
+            print("Output shape is ", pred_list.shape)
 
             # psnr = np.asarray(psnr, dtype=np.float32)/batch_id
             # fmae = np.asarray(fmae, dtype=np.float32)/batch_id
