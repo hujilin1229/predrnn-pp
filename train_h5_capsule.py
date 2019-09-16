@@ -221,11 +221,11 @@ def main(argv=None):
         imss = train_input_handle.get_batch()
 
         tem_data = imss.copy()
-        heading_image = imss[:, :, :, 2]*255
+        heading_image = imss[:, :, :, :, 2]*255
         heading_image = (heading_image // 85).astype(np.int8) + 1
-        heading_image[tem_data[:, :, :, 2] == 0] = 0
+        heading_image[tem_data[:, :, :, :, 2] == 0] = 0
         heading_image = heading_table[heading_image]
-        speed_on_axis = np.expand_dims(imss[:, :, :, 1] / np.sqrt(2), axis=-1)
+        speed_on_axis = np.expand_dims(imss[:, :, :, :, 1] / np.sqrt(2), axis=-1)
         imss = speed_on_axis * heading_image
         print(heading_image.shape)
         print(speed_on_axis.shape)
@@ -304,11 +304,11 @@ def main(argv=None):
                 test_ims = test_input_handle.get_test_batch(indicies)
             
                 tem_data = test_ims.copy()
-                heading_image = test_ims[:, :, :, 2] * 255
+                heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
-                heading_image[tem_data[:, :, :, 2] == 0] = 0
+                heading_image[tem_data[:, :, :, :, 2] == 0] = 0
                 heading_image = heading_table[heading_image]
-                speed_on_axis = np.expand_dims(test_ims[:, :, :, 1] / np.sqrt(2), axis=-1)
+                speed_on_axis = np.expand_dims(test_ims[:, :, :, :, 1] / np.sqrt(2), axis=-1)
                 test_ims = speed_on_axis * heading_image
 
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
