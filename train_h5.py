@@ -345,6 +345,7 @@ def main(argv=None):
             gt_list2 = []
             se_total = 0.
             sub_files = preprocess.list_filenames(valid_data_paths, [])
+            sub_files = sorted(sub_files)
             for f in sub_files:
                 with h5py.File(os.path.join(valid_data_paths, f), 'r') as h5_file:
                     data = h5_file['array'][()]
@@ -378,7 +379,7 @@ def main(argv=None):
             gt_list2 = np.stack(gt_list2, axis=0)
             print("gt_list1: ", gt_list, flush=True)
             print("gt_list2: ", gt_list2, flush=True)
-            print("differences: ", gt_list2 - gt_list, flush=True)
+            print("differences: ", np.sum(gt_list2 - gt_list, axis=[2, 3, 4]), flush=True)
 
 
         if itr % FLAGS.snapshot_interval == 0:
