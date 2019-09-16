@@ -379,7 +379,7 @@ def main(argv=None):
             gt_list2 = np.stack(gt_list2, axis=0)
             # print("gt_list1: ", gt_list, flush=True)
             # print("gt_list2: ", gt_list2, flush=True)
-            print("differences: ", np.sum(gt_list2 - gt_list, axis=[2, 3, 4]), flush=True)
+            print("differences: ", np.sum(gt_list2 - gt_list, axis=(2, 3, 4)), flush=True)
 
 
         if itr % FLAGS.snapshot_interval == 0:
