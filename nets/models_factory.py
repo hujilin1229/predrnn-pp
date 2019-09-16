@@ -1,8 +1,9 @@
 import tensorflow as tf
 
-from nets import predrnn_pp
+from nets import predrnn_pp, predrnn_pp_capsule
 
 networks_map = {'predrnn_pp': predrnn_pp.rnn,
+                'predrnn_pp_capsule': predrnn_pp_capsule.rnn
                }
 
 def construct_model(name, images, mask_true, num_layers, num_hidden,
