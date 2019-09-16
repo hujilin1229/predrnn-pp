@@ -325,7 +325,7 @@ def main(argv=None):
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(img_mse[i] / (batch_id*batch_size*FLAGS.img_height *
                                     FLAGS.img_width * FLAGS.patch_size_height *
-                                    FLAGS.patch_size_width * FLAGS.img_channel ))
+                                    FLAGS.patch_size_width * FLAGS.img_channel ), flush=True)
 
             gt_list = np.stack(gt_list, axis=0)
             pred_list = np.stack(pred_list, axis=0)
@@ -333,12 +333,12 @@ def main(argv=None):
             volume_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
             speed_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
             direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
-            print("The output mse is ", mse)
-            print("The volume mse is ", volume_mse)
-            print("The speed mse is ", speed_mse)
-            print("The direction mse is ", direction_mse)
-            print("Indices: ", indicies)
-            print("Output shape is ", pred_list.shape)
+            print("The output mse is ", mse, flush=True)
+            print("The volume mse is ", volume_mse, flush=True)
+            print("The speed mse is ", speed_mse, flush=True)
+            print("The direction mse is ", direction_mse, flush=True)
+            print("Indices: ", indicies, flush=True)
+            print("Output shape is ", pred_list.shape, flush=True)
 
             # psnr = np.asarray(psnr, dtype=np.float32)/batch_id
             # fmae = np.asarray(fmae, dtype=np.float32)/batch_id
