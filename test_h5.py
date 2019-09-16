@@ -243,6 +243,7 @@ def main(argv=None):
             img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
             img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
 
+            print(indicies)
             print("img_gt: ", img_gt.shape)
             print("img_gen: ", img_gen.shape)
             se_total += np.sum((img_gt - img_gen)**2)
