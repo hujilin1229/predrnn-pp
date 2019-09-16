@@ -291,7 +291,6 @@ def main(argv=None):
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
                 # test_ims = test_input_handle.get_batch()
-                print("Testing Indices: ", indicies)
                 test_ims = test_input_handle.get_test_batch(indicies)
                 gt_list.append(test_ims[:, FLAGS.input_length:, :, :, :])
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
@@ -327,8 +326,7 @@ def main(argv=None):
                 print(img_mse[i] / (batch_id*batch_size*FLAGS.img_height *
                                     FLAGS.img_width * FLAGS.patch_size_height *
                                     FLAGS.patch_size_width * FLAGS.img_channel ))
-            
-            
+
             gt_list = np.stack(gt_list, axis=0)
             pred_list = np.stack(pred_list, axis=0)
             mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
