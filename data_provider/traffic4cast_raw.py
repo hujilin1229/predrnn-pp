@@ -28,9 +28,12 @@ class InputHandle:
         # construct dataset
         cache = 6
         loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': 0}
-        dataset = HDF5Dataset(self.paths, recursive=False, load_data=False, data_cache_size=cache)
-        self.data_loader = data.DataLoader(dataset, **loader_params)
+        self.dataset = HDF5Dataset(self.paths, recursive=False, load_data=False, data_cache_size=cache)
+        self.data_loader = data.DataLoader(self.dataset, **loader_params)
         self.current_position = 0
+
+    def get_data_files(self):
+        return [d['file_path'] for d in self.dataset.get_data_infos('array')]
 
     def next(self):
         self.current_position += 1

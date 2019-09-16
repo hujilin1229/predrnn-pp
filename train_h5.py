@@ -346,6 +346,12 @@ def main(argv=None):
             se_total = 0.
             sub_files = preprocess.list_filenames(valid_data_paths, [])
             sub_files = sorted(sub_files)
+            valid_data_files = test_input_handle.get_data_files()
+            print("valid data files: ")
+            print(valid_data_files)
+            print("sub files: ")
+            print(sub_files)
+
             for f in sub_files:
                 with h5py.File(os.path.join(valid_data_paths, f), 'r') as h5_file:
                     data = h5_file['array'][()]
@@ -370,9 +376,6 @@ def main(argv=None):
                     img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                     img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
                     gt_list2.append(img_gt)
-                    print(indicies)
-                    print("img_gt: ", img_gt.shape)
-                    print("img_gen: ", img_gen.shape)
                     se_total += np.sum((img_gt - img_gen) ** 2)
             mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
             print("MSE: ", mse, flush=True)
