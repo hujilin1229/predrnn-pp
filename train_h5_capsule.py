@@ -194,7 +194,6 @@ def main(argv=None):
         FLAGS.dataset_name, train_data_paths, valid_data_paths,
         FLAGS.batch_file, True, FLAGS.input_length, FLAGS.seq_length - FLAGS.input_length)
 
-    cities = ['Berlin', 'Istanbul', 'Moscow']
     # The following indicies are the start indicies of the 3 images to predict in the 288 time bins (0 to 287)
     # in each daily test file. These are time zone dependent. Berlin lies in UTC+2 whereas Istanbul and Moscow
     # lie in UTC+3.
@@ -223,6 +222,7 @@ def main(argv=None):
         # print("imss shape is ", imss.shape)
         tem_data = imss.copy()
         heading_image = imss[:, :, :, :, 2]*255
+        print("Heading Unique", np.unique(heading_image), flush=True)
         heading_image = (heading_image // 85).astype(np.int8) + 1
         heading_image[tem_data[:, :, :, :, 2] == 0] = 0
         heading_image = heading_table[heading_image]
