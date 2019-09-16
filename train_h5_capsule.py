@@ -328,10 +328,10 @@ def main(argv=None):
                     val_results_heading = np.zeros_like(gx[..., 1])
                     epsilon = 1e-2
                     gx[gx < epsilon] = 0.
-                    val_results_heading[gx[..., 0] > 0 & gx[..., 1] > 0] = 85.0 / 255.0
-                    val_results_heading[gx[..., 0] > 0 & gx[..., 1] < 0] = 255.0 / 255.0
-                    val_results_heading[gx[..., 0] < 0 & gx[..., 1] < 0] = 170.0 / 255.0
-                    val_results_heading[gx[..., 0] < 0 & gx[..., 1] > 0] = 1.0 / 255.0
+                    val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
+                    val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
+                    val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
+                    val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] > 0)] = 1.0 / 255.0
 
                     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
 
