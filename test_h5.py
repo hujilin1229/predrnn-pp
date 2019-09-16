@@ -219,6 +219,8 @@ def main(argv=None):
     se_1 = 0.
     se_2 = 0.
     se_3 = 0.
+    gt_list = []
+    pred_list = []
     for f in sub_files:
         with h5py.File(os.path.join(test_data_paths, f), 'r') as h5_file:
             data = h5_file['array'][()]
@@ -243,6 +245,8 @@ def main(argv=None):
             img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
             img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
 
+            gt_list.append(img_gt)
+            pred_list.append(img_gen)
             print(indicies)
             print("img_gt: ", img_gt.shape)
             print("img_gen: ", img_gen.shape)
@@ -266,6 +270,11 @@ def main(argv=None):
     print("MSE_vol: ", mse1)
     print("MSE_sp: ", mse2)
     print("MSE_hd: ", mse3)
+
+    pred_list = np.stack(pred_list, axis=0)
+    gt_list = np.stack(gt_list, axis=0)
+    array_mse = masked_mse_np(pred_list, gt_list, np.nan)
+    print("Array MSE: ", array_mse)
 
     print("Finished...")
 
