@@ -81,7 +81,7 @@ tf.app.flags.DEFINE_integer('display_interval', 10,
                             'number of iters showing training loss.')
 tf.app.flags.DEFINE_integer('test_interval', 10,
                             'number of iters for test.')
-tf.app.flags.DEFINE_integer('snapshot_interval', 10,
+tf.app.flags.DEFINE_integer('snapshot_interval', 100,
                             'number of iters saving models.')
 
 class Model(object):
@@ -282,10 +282,14 @@ def main(argv=None):
                                   FLAGS.img_height,
                                   FLAGS.img_width,
                                   FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
+
+            gt_list = []
+            pred_list = []
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
                 # test_ims = test_input_handle.get_batch()
                 test_ims = test_input_handle.get_test_batch(indicies)
+                gt_list.append(test_ims)
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
 
                 img_gen = model.test(test_dat, mask_true, batch_size)
@@ -293,6 +297,7 @@ def main(argv=None):
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
+                pred_list.append(img_gen)
                 # MSE per frame
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = test_ims[:,i + FLAGS.input_length,:,:, :]
@@ -313,10 +318,23 @@ def main(argv=None):
             avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
                                  FLAGS.img_width * FLAGS.patch_size_height *
                                  FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
-
             print('mse per seq: ' + str(avg_mse), flush=True)
+
+            gt_list = np.stack(gt_list, axis=0)
+            pred_list = np.stack(pred_list, axis=0)
+            mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
+            volume_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
+            speed_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
+            print("The output mse is ", mse)
+            print("The volume mse is ", volume_mse)
+            print("The speed mse is ", speed_mse)
+            print("The direction mse is ", direction_mse)
+
             for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(img_mse[i] / (batch_id*batch_size))
+                print(img_mse[i] / (batch_id*batch_size*FLAGS.img_height *
+                                    FLAGS.img_width * FLAGS.patch_size_height *
+                                    FLAGS.patch_size_width * FLAGS.img_channel ))
             psnr = np.asarray(psnr, dtype=np.float32)/batch_id
             fmae = np.asarray(fmae, dtype=np.float32)/batch_id
             sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
