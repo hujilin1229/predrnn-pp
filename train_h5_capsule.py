@@ -375,20 +375,6 @@ def main(argv=None):
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
 
-
-            # psnr = np.asarray(psnr, dtype=np.float32)/batch_id
-            # fmae = np.asarray(fmae, dtype=np.float32)/batch_id
-            # sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
-            # print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
-            # for i in range(FLAGS.seq_length - FLAGS.input_length):
-            #     print(psnr[i], flush=True)
-            # print('fmae per frame: ' + str(np.mean(fmae)))
-            # for i in range(FLAGS.seq_length - FLAGS.input_length):
-            #     print(fmae[i], flush=True)
-            # print('sharpness per frame: ' + str(np.mean(sharp)))
-            # for i in range(FLAGS.seq_length - FLAGS.input_length):
-            #     print(sharp[i], flush=True)
-
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
 
