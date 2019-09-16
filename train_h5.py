@@ -301,6 +301,7 @@ def main(argv=None):
                     # get relevant training data pieces
                     data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
                     data = np.stack(data, axis=0)
+                    data = data.astype(np.float32) / 255.0
 
                 batch_id = batch_id + 1
                 # test_ims = test_input_handle.get_batch()
