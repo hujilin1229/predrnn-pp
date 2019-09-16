@@ -72,10 +72,12 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
                                      activation=tf.nn.tanh,
                                      padding='same',
                                      name="back_to_pixel")
-            shape_out2 = shape[:-1] + [FLAGS.patch_size_height*FLAGS.patch_size_width, FLAGS.img_channel]
-            x_gen = tf.reshape(x_gen, tf.TensorShape(shape_out2))
+
+            x_gen = tf.reshape(x_gen, [-1, FLAGS.img_height, FLAGS.img_width,
+                                       FLAGS.patch_size_height*FLAGS.patch_size_width, FLAGS.img_channel])
             x_gen = squash(x_gen, dim=-1)
-            x_gen = tf.reshape(x_gen, tf.TensorShape(shape))
+            x_gen = tf.reshape(x_gen, [-1, FLAGS.img_height, FLAGS.img_width,
+                                       FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel])
             gen_images.append(x_gen)
 
     gen_images = tf.stack(gen_images)
