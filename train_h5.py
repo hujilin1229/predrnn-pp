@@ -289,11 +289,25 @@ def main(argv=None):
 
             gt_list = []
             pred_list = []
+
+            valid_data_files = test_input_handle.get_data_files()
+            print("valid data files: ")
+            print(valid_data_files)
+
             while(test_input_handle.no_batch_left() == False):
+
+                with h5py.File(valid_data_files[batch_id], 'r') as h5_file:
+                    data = h5_file['array'][()]
+                    # get relevant training data pieces
+                    data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
+                    data = np.stack(data, axis=0)
+
                 batch_id = batch_id + 1
                 # test_ims = test_input_handle.get_batch()
                 test_ims = test_input_handle.get_test_batch(indicies)
                 print("Test Imgs: ", test_ims.shape)
+                print("Difference: ", np.sum(test_ims - data))
+
                 gt_list.append(test_ims[:, FLAGS.input_length:, :, :, :])
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
 
