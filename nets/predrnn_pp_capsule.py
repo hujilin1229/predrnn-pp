@@ -17,7 +17,7 @@ def squash(v_j, dim = -1):
     a_j =  vec_squared_norm / (1 + vec_squared_norm)
     scalar_factor = a_j / tf.sqrt(vec_squared_norm + epsilon)
     vec_squashed = scalar_factor * v_j  # element-wise
-    return vec_squashed, a_j
+    return vec_squashed
 
 def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
         seq_length=20, input_length=10, tln=True, batch_size=None):
