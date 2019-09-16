@@ -287,6 +287,9 @@ def main(argv=None):
             # os.mkdir(res_path)
             avg_mse = 0
             batch_id = 0
+            gt_list = []
+            pred_list = []
+
             img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 img_mse.append(0)
@@ -303,7 +306,8 @@ def main(argv=None):
                 batch_id = batch_id + 1
                 # test_ims = test_input_handle.get_batch()
                 test_ims = test_input_handle.get_test_batch(indicies)
-            
+                gt_list.append(test_ims[:, FLAGS.input_length:, :, :, 1:])
+
                 tem_data = test_ims.copy()
                 heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
@@ -320,6 +324,7 @@ def main(argv=None):
                 img_gen = np.concatenate(img_gen)
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # MSE per frame
+                img_gen_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
                     gx = img_gen[:,i,:, :, :]
@@ -334,6 +339,7 @@ def main(argv=None):
                     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] > 0)] = 1.0 / 255.0
 
                     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
+                    img_gen_list.append(gx)
 
                     fmae[i] += metrics.batch_mae_frame_float(gx, x)
                     gx = np.maximum(gx, 0)
@@ -346,13 +352,24 @@ def main(argv=None):
                     pred_frm = np.uint8(gx * 255)
                     psnr[i] += metrics.batch_psnr(pred_frm, real_frm)
 
+                img_gen_list = np.stack(img_gen_list, axis=1)
+                pred_list.append(img_gen_list)
                 test_input_handle.next()
 
             avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
                                  FLAGS.img_width * FLAGS.patch_size_height *
                                  FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
-
             print('mse per seq: ' + str(avg_mse), flush=True)
+
+            gt_list = np.stack(gt_list, axis=0)
+            pred_list = np.stack(pred_list, axis=0)
+            mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
+            speed_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
+            print("The output mse is ", mse)
+            print("The speed mse is ", speed_mse)
+            print("The direction mse is ", direction_mse)
+
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 print(img_mse[i] / (batch_id*batch_size))
             psnr = np.asarray(psnr, dtype=np.float32)/batch_id
