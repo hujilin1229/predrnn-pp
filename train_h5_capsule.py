@@ -363,9 +363,10 @@ def main(argv=None):
 
             gt_list = np.stack(gt_list, axis=0)
             pred_list = np.stack(pred_list, axis=0)
+
             mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
-            speed_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
-            direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
+            speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
