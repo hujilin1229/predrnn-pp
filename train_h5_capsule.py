@@ -220,6 +220,7 @@ def main(argv=None):
             train_input_handle.begin(do_shuffle=True)
         imss = train_input_handle.get_batch()
 
+        print("imss shape is ", imss.shape)
         tem_data = imss.copy()
         heading_image = imss[:, :, :, :, 2]*255
         heading_image = (heading_image // 85).astype(np.int8) + 1
