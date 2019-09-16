@@ -220,7 +220,7 @@ def main(argv=None):
             train_input_handle.begin(do_shuffle=True)
         imss = train_input_handle.get_batch()
 
-        print("imss shape is ", imss.shape)
+        # print("imss shape is ", imss.shape)
         tem_data = imss.copy()
         heading_image = imss[:, :, :, :, 2]*255
         heading_image = (heading_image // 85).astype(np.int8) + 1
@@ -228,9 +228,9 @@ def main(argv=None):
         heading_image = heading_table[heading_image]
         speed_on_axis = np.expand_dims(imss[:, :, :, :, 1] / np.sqrt(2), axis=-1)
         imss = speed_on_axis * heading_image
-        print(heading_image.shape)
-        print(speed_on_axis.shape)
-        print(imss.shape)
+        # print(heading_image.shape)
+        # print(speed_on_axis.shape)
+        # print(imss.shape)
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
         num_batches = imss.shape[0]
         for bi in range(0, num_batches, FLAGS.batch_size):
