@@ -140,7 +140,10 @@ class Model(object):
         self.sess = tf.Session(config = configProt)
         self.sess.run(init)
         if FLAGS.pretrained_model:
-            self.saver.restore(self.sess, tf.train.latest_checkpoint(FLAGS.pretrained_model))
+            try:
+                self.saver.restore(self.sess, tf.train.latest_checkpoint(FLAGS.pretrained_model))
+            except:
+                pass
 
     def train(self, inputs, lr, mask_true, batch_size):
         feed_dict = {self.x: inputs}
