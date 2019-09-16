@@ -293,6 +293,7 @@ def main(argv=None):
                 batch_id = batch_id + 1
                 # test_ims = test_input_handle.get_batch()
                 test_ims = test_input_handle.get_test_batch(indicies)
+                print("Test Imgs: ", test_ims.shape)
                 gt_list.append(test_ims[:, FLAGS.input_length:, :, :, :])
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
 
