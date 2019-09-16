@@ -342,38 +342,38 @@ def main(argv=None):
             print("Indices: ", indicies, flush=True)
             print("Output shape is ", pred_list.shape, flush=True)
 
-            se_total = 0.
-            sub_files = preprocess.list_filenames(valid_data_paths, [])
-            for f in sub_files:
-                with h5py.File(os.path.join(valid_data_paths, f), 'r') as h5_file:
-                    data = h5_file['array'][()]
-                    # get relevant training data pieces
-                    data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
-                    data = np.stack(data, axis=0)
-                    # type casting
-
-                    test_dat = data.astype(np.float32) / 255.0
-                    test_dat = preprocess.reshape_patch(test_dat, FLAGS.patch_size_width, FLAGS.patch_size_height)
-                    batch_size = len(indicies)
-                    mask_true = np.zeros((batch_size,
-                                          FLAGS.seq_length - FLAGS.input_length - 1,
-                                          FLAGS.img_height,
-                                          FLAGS.img_width,
-                                          FLAGS.patch_size_height * FLAGS.patch_size_width * FLAGS.img_channel))
-                    img_gen = model.test(test_dat, mask_true, batch_size)
-                    # concat outputs of different gpus along batch
-                    img_gen = np.concatenate(img_gen)
-                    img_gen = np.maximum(img_gen, 0)
-                    img_gen = np.minimum(img_gen, 1)
-                    img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
-                    img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
-
-                    print(indicies)
-                    print("img_gt: ", img_gt.shape)
-                    print("img_gen: ", img_gen.shape)
-                    se_total += np.sum((img_gt - img_gen) ** 2)
-            mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
-            print("MSE: ", mse, flush=True)
+            # se_total = 0.
+            # sub_files = preprocess.list_filenames(valid_data_paths, [])
+            # for f in sub_files:
+            #     with h5py.File(os.path.join(valid_data_paths, f), 'r') as h5_file:
+            #         data = h5_file['array'][()]
+            #         # get relevant training data pieces
+            #         data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
+            #         data = np.stack(data, axis=0)
+            #         # type casting
+            #
+            #         test_dat = data.astype(np.float32) / 255.0
+            #         test_dat = preprocess.reshape_patch(test_dat, FLAGS.patch_size_width, FLAGS.patch_size_height)
+            #         batch_size = len(indicies)
+            #         mask_true = np.zeros((batch_size,
+            #                               FLAGS.seq_length - FLAGS.input_length - 1,
+            #                               FLAGS.img_height,
+            #                               FLAGS.img_width,
+            #                               FLAGS.patch_size_height * FLAGS.patch_size_width * FLAGS.img_channel))
+            #         img_gen = model.test(test_dat, mask_true, batch_size)
+            #         # concat outputs of different gpus along batch
+            #         img_gen = np.concatenate(img_gen)
+            #         img_gen = np.maximum(img_gen, 0)
+            #         img_gen = np.minimum(img_gen, 1)
+            #         img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
+            #         img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
+            #
+            #         print(indicies)
+            #         print("img_gt: ", img_gt.shape)
+            #         print("img_gen: ", img_gen.shape)
+            #         se_total += np.sum((img_gt - img_gen) ** 2)
+            # mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
+            # print("MSE: ", mse, flush=True)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
