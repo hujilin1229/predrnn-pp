@@ -360,6 +360,10 @@ def main(argv=None):
                                  FLAGS.img_width * FLAGS.patch_size_height *
                                  FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
             print('mse per seq: ' + str(avg_mse), flush=True)
+            for i in range(FLAGS.seq_length - FLAGS.input_length):
+                print(img_mse[i] / (batch_id*batch_size*FLAGS.img_height *
+                                 FLAGS.img_width * FLAGS.patch_size_height *
+                                 FLAGS.patch_size_width * FLAGS.img_channel))
 
             gt_list = np.stack(gt_list, axis=0)
             pred_list = np.stack(pred_list, axis=0)
@@ -371,20 +375,19 @@ def main(argv=None):
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
 
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(img_mse[i] / (batch_id*batch_size))
-            psnr = np.asarray(psnr, dtype=np.float32)/batch_id
-            fmae = np.asarray(fmae, dtype=np.float32)/batch_id
-            sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
-            print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(psnr[i], flush=True)
-            print('fmae per frame: ' + str(np.mean(fmae)))
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(fmae[i], flush=True)
-            print('sharpness per frame: ' + str(np.mean(sharp)))
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                print(sharp[i], flush=True)
+
+            # psnr = np.asarray(psnr, dtype=np.float32)/batch_id
+            # fmae = np.asarray(fmae, dtype=np.float32)/batch_id
+            # sharp = np.asarray(sharp, dtype=np.float32)/(batch_size*batch_id)
+            # print('psnr per frame: ' + str(np.mean(psnr)), flush=True)
+            # for i in range(FLAGS.seq_length - FLAGS.input_length):
+            #     print(psnr[i], flush=True)
+            # print('fmae per frame: ' + str(np.mean(fmae)))
+            # for i in range(FLAGS.seq_length - FLAGS.input_length):
+            #     print(fmae[i], flush=True)
+            # print('sharpness per frame: ' + str(np.mean(sharp)))
+            # for i in range(FLAGS.seq_length - FLAGS.input_length):
+            #     print(sharp[i], flush=True)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
