@@ -373,7 +373,7 @@ def main(argv=None):
                     print("img_gen: ", img_gen.shape)
                     se_total += np.sum((img_gt - img_gen) ** 2)
             mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
-            print("MSE: ", mse)
+            print("MSE: ", mse, flush=True)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
