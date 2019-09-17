@@ -42,6 +42,9 @@ class HDF5Dataset(data.Dataset):
         if len(self.files) < 1:
             raise RuntimeError('No hdf5 datasets found')
 
+        for h5dataset_fp in self.files:
+            self._add_data_infos(str(h5dataset_fp.resolve()))
+
     def __getitem__(self, index):
         # get data
         x = self.get_data("array", index)
@@ -51,7 +54,7 @@ class HDF5Dataset(data.Dataset):
     def __len__(self):
         return len(self.files)
 
-    def _add_data_infos(self, file_path, load_data):
+    def _add_data_infos(self, file_path):
         with h5py.File(file_path, 'r') as h5_file:
             # Walk through all groups, extracting datasets
             for dname, ds in h5_file.items():
