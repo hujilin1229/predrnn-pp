@@ -36,7 +36,7 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
     if dataset_name == 'mnist':
         test_input_param = {'paths': valid_data_list,
                             'minibatch_size': batch_size,
-                            'input_data_type': 'float32',
+                            'input_data_type': np.float32,
                             'is_output_sequence': True,
                             'name': dataset_name+'test iterator'}
         test_input_handle = datasets_map[dataset_name].InputHandle(test_input_param)
@@ -44,7 +44,7 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
         if is_training:
             train_input_param = {'paths': train_data_list,
                                  'minibatch_size': batch_size,
-                                 'input_data_type': 'float32',
+                                 'input_data_type': np.float32,
                                  'is_output_sequence': True,
                                  'name': dataset_name+' train iterator'}
             train_input_handle = datasets_map[dataset_name].InputHandle(train_input_param)
