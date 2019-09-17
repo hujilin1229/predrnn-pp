@@ -76,6 +76,7 @@ class HDF5Dataset(data.Dataset):
         """
         fp = self.get_data_infos(type)[i]['file_path']
         with h5py.File(fp, 'r') as h5_file:
+            print(i, fp)
             data = h5_file[type][()]
 
         return data
