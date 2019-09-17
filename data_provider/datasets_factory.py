@@ -54,7 +54,7 @@ def data_provider(dataset_name, train_data_paths, valid_data_paths, batch_size,
             return test_input_handle
     else:
         test_input_param = {'paths': valid_data_paths,
-                            'num_files': 7,
+                            'num_files': batch_size,
                             'input_data_type': 'float32',
                             'output_data_type': 'float32',
                             'seq_len': seq_len,
