@@ -26,6 +26,7 @@ class InputHandle:
         loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': self.num_files%6}
         self.dataset = HDF5Dataset(self.paths, recursive=False)
         self.data_loader = data.DataLoader(self.dataset, **loader_params)
+        self.dataset_iter = iter(self.data_loader)
         self.current_position = 0
 
     def get_data_files(self):
@@ -43,7 +44,7 @@ class InputHandle:
             return False
 
     def get_batch(self):
-        data = next(iter(self.data_loader))
+        data = next(self.dataset_iter)
         data = data.numpy().astype(self.input_data_type) / 255.0
         num_files, num_data, height, width, channel = data.shape
         num_batch_per_file = num_data // (self.seq_len + self.horizon)
@@ -54,7 +55,7 @@ class InputHandle:
 
     def get_test_batch(self, indices):
         # num of batches: len(indices)
-        data = next(iter(self.data_loader))
+        data = next(self.dataset_iter)
         data = data.squeeze(0).numpy().astype(self.input_data_type) / 255.0
         data = [data[i-self.seq_len:i+self.horizon] for i in indices]
         data = np.stack(data, axis=0)
