@@ -324,7 +324,7 @@ def main(argv=None):
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
                     gx = img_gen[:,i,:, :, :]
-
+                    print("img_gen shape is ", gx.shape)
                     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
                     print("val speed: ", val_results_speed, flush=True)
                     val_results_heading = np.zeros_like(gx[..., 1])
