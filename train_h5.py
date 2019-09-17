@@ -232,7 +232,6 @@ def main(argv=None):
             random_flip = np.random.random_sample(
                 (batch_size, FLAGS.seq_length-FLAGS.input_length-1))
             true_token = (random_flip < eta)
-            #true_token = (random_flip < pow(base,itr))
             ones = np.ones((FLAGS.img_height,
                             FLAGS.img_width,
                             int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))

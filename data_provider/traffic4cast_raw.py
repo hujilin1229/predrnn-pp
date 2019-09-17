@@ -23,7 +23,7 @@ class InputHandle:
 
     def begin(self, do_shuffle=True):
         # construct dataset
-        loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': self.num_files%6}
+        loader_params = {'batch_size': self.num_files, 'shuffle': do_shuffle, 'num_workers': self.num_files}
         self.dataset = HDF5Dataset(self.paths, recursive=False)
         self.data_loader = data.DataLoader(self.dataset, **loader_params)
         self.dataset_iter = iter(self.data_loader)
