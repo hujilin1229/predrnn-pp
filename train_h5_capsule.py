@@ -328,6 +328,7 @@ def main(argv=None):
                     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
                     # print("val speed: ", val_results_speed, flush=True)
                     val_results_heading = np.zeros_like(gx[..., 1])
+                    print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed))
                     epsilon = 1e-1
                     gx[val_results_speed < epsilon] = 0.
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
