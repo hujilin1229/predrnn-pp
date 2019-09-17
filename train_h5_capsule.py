@@ -103,7 +103,6 @@ class Model(object):
         self.batchsize = tf.placeholder(tf.int32, [], name='batchsize')
 
         grads = []
-        loss_train = []
         self.pred_seq = []
         self.tf_lr = tf.placeholder(tf.float32, shape=[])
         num_hidden = [int(x) for x in FLAGS.num_hidden.split(',')]
@@ -319,14 +318,15 @@ def main(argv=None):
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
+                print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
                 img_gen_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
                     gx = img_gen[:,i,:, :, :]
-                    print("img_gen shape is ", gx.shape)
+                    # print("img_gen shape is ", gx.shape)
                     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
-                    print("val speed: ", val_results_speed, flush=True)
+                    # print("val speed: ", val_results_speed, flush=True)
                     val_results_heading = np.zeros_like(gx[..., 1])
                     epsilon = 1e-1
                     gx[val_results_speed < epsilon] = 0.
