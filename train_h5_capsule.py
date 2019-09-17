@@ -175,7 +175,7 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length)
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + 'squash'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
@@ -318,7 +318,7 @@ def main(argv=None):
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
-                print("Image Generates Shape is ", img_gen.shape)
+                # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
                 img_gen_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
