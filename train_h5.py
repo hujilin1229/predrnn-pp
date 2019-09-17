@@ -295,7 +295,6 @@ def main(argv=None):
             print(valid_data_files)
 
             while(test_input_handle.no_batch_left() == False):
-
                 with h5py.File(valid_data_files[batch_id], 'r') as h5_file:
                     data = h5_file['array'][()]
                     # get relevant training data pieces

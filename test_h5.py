@@ -247,9 +247,6 @@ def main(argv=None):
 
             gt_list.append(img_gt)
             pred_list.append(img_gen)
-            print(indicies)
-            print("img_gt: ", img_gt.shape)
-            print("img_gen: ", img_gen.shape)
             se_total += np.sum((img_gt - img_gen)**2)
 
             se_1 += np.sum((img_gt[..., 0] - img_gen[..., 0]) ** 2)

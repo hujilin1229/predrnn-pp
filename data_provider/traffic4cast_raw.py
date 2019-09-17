@@ -55,7 +55,6 @@ class InputHandle:
     def get_test_batch(self, indices):
         # num of batches: len(indices)
         data = next(iter(self.data_loader))
-        print("test data shape is ", data.shape)
         data = data.squeeze(0).numpy().astype(self.input_data_type) / 255.0
         data = [data[i-self.seq_len:i+self.horizon] for i in indices]
         data = np.stack(data, axis=0)
