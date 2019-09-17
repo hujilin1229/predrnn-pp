@@ -1,146 +1,105 @@
+import os
+import random
 import h5py
+from torch.utils.data import Dataset
 from pathlib import Path
-import torch
-from torch.utils import data
+
+default_opener = lambda p_: h5py.File(p_, 'r')
 
 
-class HDF5Dataset(data.Dataset):
-    """Represents an abstract HDF5 dataset.
+class HDF5Dataset(Dataset):
+    def __init__(self, file_path,
+                 recursive,
+                 transform,
+                 shuffle_shards=True,
+                 opener=default_opener,
+                 seed=123):
+        """
+        :param file_ps: list of file paths to .hdf5 files. Last (alphabetically) file is expected to contain less
+        images.
+        :param transform: transformation to apply to read HDF5 dataset. Must contain some transformation to array!
+        See README.md
+        :param shuffle_shards: if true, shards are shuffled with seed
+        """
+        if transform is None:
+            raise ValueError('transform must have at least hdf5.transforms.HDF5DatasetToArray()')
 
-    Input params:
-        file_path: Path to the folder containing the dataset (one or multiple HDF5 files).
-        recursive: If True, searches for h5 files in subdirectories.
-        load_data: If True, loads all the data immediately into RAM. Use this if
-            the dataset is fits into memory. Otherwise, leave this at false and
-            the data will load lazily.
-        data_cache_size: Number of HDF5 files that can be cached in the cache (default=3).
-        transform: PyTorch transform to apply to every data instance (default=None).
-
-    Example:
-        num_epochs = 50
-        loader_params = {'batch_size': 10, 'shuffle': True, 'num_workers': 6}
-        dataset = HDF5Dataset('C:/ml/data', recursive=True, load_data=False,
-           data_cache_size=4, transform=None)
-
-        data_loader = data.DataLoader(dataset, **loader_params)
-        for i in range(num_epochs):
-           for x in data_loader:
-    """
-
-    def __init__(self, file_path, recursive, load_data=False, data_cache_size=3, transform=None):
-        super().__init__()
-        self.data_info = []
-        self.data_cache = {}
-        self.data_cache_size = data_cache_size
-        self.transform = transform
-
-        # Search for all h5 files
         p = Path(file_path)
         assert (p.is_dir())
         if recursive:
-            files = sorted(p.glob('**/*.h5'))
+            file_ps = sorted(p.glob('**/*.h5'))
         else:
-            files = sorted(p.glob('*.h5'))
-        if len(files) < 1:
-            raise RuntimeError('No hdf5 datasets found')
+            file_ps = sorted(p.glob('*.h5'))
 
-        for h5dataset_fp in files:
-            self._add_data_infos(str(h5dataset_fp.resolve()), load_data)
-
-    def __getitem__(self, index):
-        # get data
-        x = self.get_data("array", index)
-        # if self.transform:
-        #     x = self.transform(x)
-        # else:
-        #     x = torch.from_numpy(x)
-        #
-        # # get label
-        # y = self.get_data("label", index)
-        # y = torch.from_numpy(y)
-        # return (x, y)
-
-        return torch.from_numpy(x)
+        if len(file_ps) == 0 or not all(os.path.isfile(p) for p in file_ps):
+            raise ValueError('Expected list of paths to HDF5 files, got {}'.format(file_ps))
+        self.opener = opener
+        self.ps, self.num_per_shard = HDF5Dataset.filter_smaller_shards(file_ps)
+        if shuffle_shards:
+            r = random.Random(seed)
+            r.shuffle(self.ps)
+        self.transform = transform
 
     def __len__(self):
-        return len(self.get_data_infos('array'))
+        return len(self.ps) * self.num_per_shard
 
-    def _add_data_infos(self, file_path, load_data):
-        with h5py.File(file_path, 'r') as h5_file:
-            # Walk through all groups, extracting datasets
-            for dname, ds in h5_file.items():
-                # for dname, ds in group.items():
-                # if data is not loaded its cache index is -1
-                idx = -1
-                if load_data:
-                    # add data to the data cache
-                    idx = self._add_to_cache(ds[()], file_path)
+    def __getitem__(self, index):
+        shard_idx = index // self.num_per_shard
+        idx_in_shard = index % self.num_per_shard
+        shard_p = self.ps[shard_idx]
+        with self.opener(shard_p) as f:
+            el = f[str(idx_in_shard)]
+            el = self.transform(el)  # must turn to array
+        return el
 
-                # type is derived from the name of the dataset; we expect the dataset
-                # name to have a name such as 'data' or 'label' to identify its type
-                # we also store the shape of the data in case we need it
-                    self.data_info.append(
-                        {'file_path': file_path, 'type': dname,
-                         'shape': ds[()].shape, 'cache_idx': idx})
-                else:
-                    self.data_info.append(
-                        {'file_path': file_path, 'type': dname,
-                         'shape': (288, 495, 436, 3), 'cache_idx': idx})
-
-    def _load_data(self, file_path):
-        """Load data to the cache given the file
-        path and update the cache index in the
-        data_info structure.
+    @staticmethod
+    def filter_smaller_shards(file_ps, opener=default_opener):
         """
-        with h5py.File(file_path, 'r') as h5_file:
-            for dname, ds in h5_file.items():
-                # for dname, ds in group.items():
-                # add data to the data cache and retrieve
-                # the cache index
-                idx = self._add_to_cache(ds[()], file_path)
-
-                # find the beginning index of the hdf5 file we are looking for
-                file_idx = next(i for i, v in enumerate(self.data_info) if v['file_path'] == file_path)
-
-                # the data info should have the same index since we loaded it in the same way
-                self.data_info[file_idx + idx]['cache_idx'] = idx
-
-        # remove an element from data cache if size was exceeded
-        if len(self.data_cache) > self.data_cache_size:
-            # remove one item from the cache at random
-            removal_keys = list(self.data_cache)
-            removal_keys.remove(file_path)
-            self.data_cache.pop(removal_keys[0])
-            # remove invalid cache_idx
-            self.data_info = [
-                {'file_path': di['file_path'], 'type': di['type'], 'shape': di['shape'], 'cache_idx': -1} if
-                di['file_path'] == removal_keys[0] else di for di in self.data_info]
-
-    def _add_to_cache(self, data, file_path):
-        """Adds data to the cache and returns its index. There is one cache
-        list for every file_path, containing all datasets in that file.
+        Filter away the (alphabetically) last shard, which is assumed to be smaller. This function also double checks
+        that all other shards have the same number of entries.
+        :param file_ps: list of .hdf5 files, does not have to be sorted.
+        :param opener: function to open shards
+        :return: tuple (ps, num_per_shard) where
+            ps = filtered file paths,
+            num_per_shard = number of entries in all of the shards in `ps`
         """
-        if file_path not in self.data_cache:
-            self.data_cache[file_path] = [data]
-        else:
-            self.data_cache[file_path].append(data)
-        return len(self.data_cache[file_path]) - 1
+        assert file_ps, 'No files given'
+        file_ps = sorted(file_ps)  # we assume that smallest shard is at the end
+        num_per_shard_prev = None
+        ps = []
+        for i, p in enumerate(file_ps):
+            num_per_shard = get_num_in_shard(p, opener)
+            if num_per_shard_prev is None:  # first file
+                num_per_shard_prev = num_per_shard
+                ps.append(p)
+                continue
+            if num_per_shard_prev < num_per_shard:
+                raise ValueError('Expected all shards to have the same number of elements,'
+                                 'except last one. Previous had {} elements, current ({}) has {}!'.format(
+                                    num_per_shard_prev, p, num_per_shard))
+            if num_per_shard_prev > num_per_shard:  # assuming this is the last
+                is_last = i == len(file_ps) - 1
+                if not is_last:
+                    raise ValueError(
+                            'Found shard with too few elements, and it is not the last one! {}\n'
+                            'Last: {}\n'.format(p, file_ps[-1]))
+                print('Filtering shard {}, dropping {} elements...'.format(p, num_per_shard))
+                break  # is last anyways
+            else:  # same numer as before, all good
+                ps.append(p)
+        return ps, num_per_shard_prev
 
-    def get_data_infos(self, type):
-        """Get data infos belonging to a certain type of data.
-        """
-        data_info_type = [di for di in self.data_info if di['type'] == type]
-        return data_info_type
 
-    def get_data(self, type, i):
-        """Call this function anytime you want to access a chunk of data from the
-            dataset. This will make sure that the data is loaded in case it is
-            not part of the data cache.
-        """
-        fp = self.get_data_infos(type)[i]['file_path']
-        if fp not in self.data_cache:
-            self._load_data(fp)
-
-        # get new cache_idx assigned by _load_data_info
-        cache_idx = self.get_data_infos(type)[i]['cache_idx']
-        return self.data_cache[fp][cache_idx]
+# def get_num_in_shard(shard_p, opener=default_opener):
+#     hdf5_root = os.path.dirname(shard_p)
+#     p_to_num_per_shard_p = os.path.join(hdf5_root, NUM_PER_SHARD_PKL)
+#     # Speeds up filtering massively on slow file systems...
+#     if os.path.isfile(p_to_num_per_shard_p):
+#         with open(p_to_num_per_shard_p, 'rb') as f:
+#             p_to_num_per_shard = pickle.load(f)
+#             num_per_shard = p_to_num_per_shard[os.path.basename(shard_p)]
+#     else:
+#         print('\rOpening {}...'.format(shard_p), end='')
+#         with opener(shard_p) as f:
+#             num_per_shard = len(f.keys())
+#     return num_per_shard
