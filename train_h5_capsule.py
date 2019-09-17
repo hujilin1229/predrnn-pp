@@ -222,15 +222,12 @@ def main(argv=None):
         # print("imss shape is ", imss.shape)
         tem_data = imss.copy()
         heading_image = imss[:, :, :, :, 2]*255
-        print("Heading Unique", np.unique(heading_image), flush=True)
+        # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
         heading_image = (heading_image // 85).astype(np.int8) + 1
         heading_image[tem_data[:, :, :, :, 2] == 0] = 0
         heading_image = heading_table[heading_image]
         speed_on_axis = np.expand_dims(imss[:, :, :, :, 1] / np.sqrt(2), axis=-1)
         imss = speed_on_axis * heading_image
-        # print(heading_image.shape)
-        # print(speed_on_axis.shape)
-        # print(imss.shape)
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
         num_batches = imss.shape[0]
         for bi in range(0, num_batches, FLAGS.batch_size):
@@ -304,7 +301,6 @@ def main(argv=None):
                                   FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
-                # test_ims = test_input_handle.get_batch()
                 test_ims = test_input_handle.get_test_batch(indicies)
                 gt_list.append(test_ims[:, FLAGS.input_length:, :, :, 1:])
 
@@ -331,8 +327,8 @@ def main(argv=None):
 
                     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
                     val_results_heading = np.zeros_like(gx[..., 1])
-                    epsilon = 1e-2
-                    gx[gx < epsilon] = 0.
+                    epsilon = 1e-1
+                    gx[np.abs(gx) < epsilon] = 0.
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
                     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
