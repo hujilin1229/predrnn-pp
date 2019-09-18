@@ -341,7 +341,7 @@ def main(argv=None):
                     #     print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed), flush=True)
                     epsilon = 1e-1
                     # Evaluate on large speed predictions
-                    gx[val_results_speed < epsilon] = 0.
+                    gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
                     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
