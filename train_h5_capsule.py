@@ -398,8 +398,8 @@ def main(argv=None):
             for i in range(20):
                 print("NO. ", i)
                 print(pred_wrong[i])
-                print(gt_wrong_speed)
-                print(gt_wrong_direction)
+                print(gt_wrong_speed[i])
+                print(gt_wrong_direction[i])
             print("--------------------------------------------")
 
         if itr % FLAGS.snapshot_interval == 0:
