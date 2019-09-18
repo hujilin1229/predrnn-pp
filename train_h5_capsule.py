@@ -364,9 +364,9 @@ def main(argv=None):
                     # Evaluate on large speed predictions
                     # gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
 
-                    gx[mavg_results[..., 1] < epsilon] = 0.0
-                    val_results_heading[mavg_results[..., 1] < epsilon] = mavg_results[..., 2]
-                    val_results_speed[mavg_results[..., 1] < epsilon] = mavg_results[..., 1]
+                    gx[mavg_results[:, i, :, :, 1] < epsilon] = 0.0
+                    val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = mavg_results[:, i, :, :, 2]
+                    val_results_speed[mavg_results[:, i, :, :, 1] < epsilon] = mavg_results[:, i, :, :, 1]
 
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
