@@ -62,6 +62,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
             z_t = gradient_highway(hidden[0], z_t, batch_size)
             hidden[1], cell[1], mem = lstm[1](z_t, hidden[1], cell[1], mem)
 
+            # The output hidden here is the results of tanh * tahnh, which falls into the range of [-1, 1]
             for i in range(2, num_layers):
                 hidden[i], cell[i], mem = lstm[i](hidden[i-1], hidden[i], cell[i], mem)
 

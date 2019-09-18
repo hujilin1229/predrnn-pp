@@ -149,8 +149,8 @@ class Model(object):
         feed_dict.update({self.tf_lr: lr})
         feed_dict.update({self.mask_true: mask_true})
         feed_dict.update({self.batchsize: batch_size})
-        loss, _ = self.sess.run((self.loss_train, self.train_op), feed_dict)
-        return loss
+        loss, _, pred_seq_list = self.sess.run((self.loss_train, self.train_op, self.pred_seq), feed_dict)
+        return loss, pred_seq_list
 
     def test(self, inputs, mask_true, batch_size):
         feed_dict = {self.x: inputs}
@@ -262,7 +262,12 @@ def main(argv=None):
                                                int(FLAGS.img_height),
                                                int(FLAGS.img_width),
                                                int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            cost = model.train(ims, lr, mask_true, batch_size)
+            cost, pred_seq_list = model.train(ims, lr, mask_true, batch_size)
+
+            pred_seq_list = np.concatenate(pred_seq_list)
+            print("Predicted Images shape is ", pred_seq_list.shape)
+            print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list))
+            print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list))
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
