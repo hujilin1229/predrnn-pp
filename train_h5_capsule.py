@@ -340,6 +340,7 @@ def main(argv=None):
                     if i == 0:
                         print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed), flush=True)
                     epsilon = 1e-1
+                    # Evaluate on large speed predictions
                     gx[val_results_speed < epsilon] = 0.
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
@@ -382,6 +383,11 @@ def main(argv=None):
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
+
+            # Evaluate on large gt speeds for direction
+            large_gt_speed = gt_list[..., 0] > 0.1
+            direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
+            print("The direction mse on large speed gt is ", direction_mse)
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
