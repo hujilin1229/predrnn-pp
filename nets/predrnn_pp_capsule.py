@@ -86,6 +86,13 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # [batch_size, seq_length, height, width, channels]
     # gen_images = tf.transpose(gen_images, [1,0,2,3,4])
     loss = tf.nn.l2_loss(gen_images - images[:,1:])
+
+    # add mask to loss to evaluate on valid vectors
+    mask = images[:, 1:, :, :, 0] > 0
+    gen_images = gen_images[mask]
+    gt_images = images[:,1:][mask]
+    loss = tf.nn.l2_loss(gen_images, gt_images)
+
     #loss += tf.reduce_sum(tf.abs(gen_images - images[:,1:]))
     return [gen_images, loss]
 
