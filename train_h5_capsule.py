@@ -325,6 +325,7 @@ def main(argv=None):
 
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
+                print("Generated Image Mean and Std are ", np.mean(img_gen), np.std(img_gen))
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
