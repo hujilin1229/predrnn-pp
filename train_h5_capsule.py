@@ -39,7 +39,7 @@ def cast_moving_avg(data):
         prediction.append(t)
         data = np.concatenate([data, t], axis =1)
 
-    prediction = np.concatenate(prediction, axis = 1)
+    prediction = np.stack(prediction, axis = 1)
 
     return prediction
 
@@ -315,6 +315,7 @@ def main(argv=None):
             gt_list = []
             pred_list = []
             pred_vec = []
+            move_avg = []
             img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
             for i in range(FLAGS.seq_length - FLAGS.input_length):
                 img_mse.append(0)
@@ -350,6 +351,7 @@ def main(argv=None):
                 # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
                 mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
+                move_avg.append(mavg_results)
                 img_gen_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
@@ -366,7 +368,7 @@ def main(argv=None):
 
                     gx[mavg_results[:, i, :, :, 1] < epsilon] = 0.0
                     val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = mavg_results[:, i, :, :, 2]
-                    val_results_speed[mavg_results[:, i, :, :, 1] < epsilon] = mavg_results[:, i, :, :, 1]
+                    # val_results_speed[mavg_results[:, i, :, :, 1] < epsilon] = mavg_results[:, i, :, :, 1]
 
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
@@ -413,7 +415,8 @@ def main(argv=None):
             print("The direction mse is ", direction_mse)
 
             # Evaluate on large gt speeds for direction
-            large_gt_speed = gt_list[..., 0] > 0.5
+            move_avg = np.stack(move_avg, axis=0)
+            large_gt_speed = move_avg[..., 1] > 0.5
             direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
             print("The direction mse on large speed gt is ", direction_mse)
 
