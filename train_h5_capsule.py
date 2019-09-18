@@ -271,8 +271,8 @@ def main(argv=None):
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
-                cost += model.train(ims_rev, lr, mask_true, batch_size)
-                cost = cost/2
+                cost2, _ = model.train(ims_rev, lr, mask_true, batch_size)
+                cost = (cost + cost2) / 2
 
             cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
                            FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
