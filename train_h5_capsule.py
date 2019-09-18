@@ -39,7 +39,7 @@ def cast_moving_avg(data):
         prediction.append(t)
         data = np.concatenate([data, t], axis =1)
 
-    prediction = np.stack(prediction, axis = 1)
+    prediction = np.concatenate(prediction, axis = 1)
 
     return prediction
 
