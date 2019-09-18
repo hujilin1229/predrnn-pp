@@ -96,6 +96,11 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
 
     loss = tf.nn.l2_loss(gen_images1-gt_images)
 
+    # compute the speed value
+    gt_speed = tf.sqrt(gt_images[..., 0]**2 + gt_images[..., 1]**2)
+    gen_speed = tf.sqrt(gen_images1[..., 0]**2 + gen_images1[..., 1]**2)
+    loss += tf.nn.l2_loss(gt_speed - gen_speed)
+
     #loss += tf.reduce_sum(tf.abs(gen_images - images[:,1:]))
     return [gen_images, loss]
 
