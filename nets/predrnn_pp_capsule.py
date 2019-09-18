@@ -91,10 +91,10 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # loss = tf.losses.compute_weighted_loss(loss, weighted)
     # # add mask to loss to evaluate on valid vectors
     gt_images = images[:,1:]
-    gen_images = tf.where(tf.not_equal(images[:,1:], zero), gen_images, tf.zeros_like(gen_images))
+    gen_images1 = tf.where(tf.not_equal(images[:,1:], zero), gen_images, tf.zeros_like(gen_images))
     gt_images = tf.where(tf.not_equal(images[:,1:], zero), gt_images, tf.zeros_like(gt_images))
 
-    loss = tf.nn.l2_loss(gen_images-gt_images)
+    loss = tf.nn.l2_loss(gen_images1-gt_images)
 
     #loss += tf.reduce_sum(tf.abs(gen_images - images[:,1:]))
     return [gen_images, loss]
