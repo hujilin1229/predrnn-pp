@@ -367,7 +367,8 @@ def main(argv=None):
                     # gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
 
                     gx[mavg_results[:, i, :, :, 1] < epsilon] = 0.0
-                    val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
+                    val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
+                        mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
 
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
