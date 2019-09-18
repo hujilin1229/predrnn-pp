@@ -266,6 +266,9 @@ def main(argv=None):
 
             pred_seq_list = np.concatenate(pred_seq_list)
             print("Predicted Images shape is ", pred_seq_list.shape)
+            print("Ground truth Images Value Range is ", np.min(ims), np.max(ims))
+            print("round truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims))
+
             print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list))
             print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list))
 
