@@ -325,7 +325,6 @@ def main(argv=None):
 
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
-                print("Generated Image Mean and Std are ", np.mean(img_gen), np.std(img_gen))
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
@@ -339,7 +338,7 @@ def main(argv=None):
                     val_results_heading = np.zeros_like(gx[..., 1])
                     # if i == 0:
                     #     print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed), flush=True)
-                    epsilon = 1e-1
+                    epsilon = 0.2
                     # Evaluate on large speed predictions
                     gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
@@ -387,7 +386,7 @@ def main(argv=None):
             print("The direction mse is ", direction_mse)
 
             # Evaluate on large gt speeds for direction
-            large_gt_speed = gt_list[..., 0] > 0.1
+            large_gt_speed = gt_list[..., 0] > 0.5
             direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
             print("The direction mse on large speed gt is ", direction_mse)
 
