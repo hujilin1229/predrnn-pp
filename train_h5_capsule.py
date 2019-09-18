@@ -22,6 +22,27 @@ def masked_mse_np(preds, labels, null_val=np.nan):
 
         return np.sum(rmse) / np.sum(mask)
 
+def cast_moving_avg(data):
+    """
+    Returns cast moving average (cast to np.uint8)
+    data = tensor of shape (5, step, 495, 436, 3) of  type float32
+    Return: tensor of shape (5, 3, 495, 436, 3) of type uint8
+    """
+
+    prediction = []
+    for i in range(3):
+        data_slice = data[:, i:]
+        # print(i, data_slice.shape)
+        # sol 1. only avg_mean without considering empty slots: looks okay with mse: 4114
+        t = np.mean(data_slice, axis = 1)
+        t = np.expand_dims(t, axis=1)
+        prediction.append(t)
+        data = np.concatenate([data, t], axis =1)
+
+    prediction = np.concatenate(prediction, axis = 1)
+
+    return prediction
+
 # -----------------------------------------------------------------------------
 FLAGS = tf.app.flags.FLAGS
 
@@ -328,6 +349,7 @@ def main(argv=None):
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
+                mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
                 img_gen_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
@@ -340,7 +362,12 @@ def main(argv=None):
                     #     print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed), flush=True)
                     epsilon = 0.2
                     # Evaluate on large speed predictions
-                    gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
+                    # gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
+
+                    gx[mavg_results[..., 1] < epsilon] = 0.0
+                    val_results_heading[mavg_results[..., 1] < epsilon] = mavg_results[..., 2]
+                    val_results_speed[mavg_results[..., 1] < epsilon] = mavg_results[..., 1]
+
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
                     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
