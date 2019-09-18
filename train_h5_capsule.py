@@ -263,14 +263,7 @@ def main(argv=None):
                                                int(FLAGS.img_width),
                                                int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
             cost, pred_seq_list = model.train(ims, lr, mask_true, batch_size)
-
             pred_seq_list = np.concatenate(pred_seq_list)
-            print("Predicted Images shape is ", pred_seq_list.shape)
-            print("Ground truth Images Value Range is ", np.min(ims), np.max(ims))
-            print("round truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims))
-
-            print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list))
-            print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list))
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
@@ -282,6 +275,13 @@ def main(argv=None):
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
+
+                print("Predicted Images shape is ", pred_seq_list.shape, flush=True)
+                print("Ground truth Images Value Range is ", np.min(ims), np.max(ims), flush=True)
+                print("Ground truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims), flush=True)
+
+                print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list), flush=True)
+                print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list), flush=True)
 
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
@@ -337,7 +337,8 @@ def main(argv=None):
                     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
                     # print("val speed: ", val_results_speed, flush=True)
                     val_results_heading = np.zeros_like(gx[..., 1])
-                    print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed))
+                    if i == 0:
+                        print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed), flush=True)
                     epsilon = 1e-1
                     gx[val_results_speed < epsilon] = 0.
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
