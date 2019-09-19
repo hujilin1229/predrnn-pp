@@ -90,16 +90,18 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # weighted = tf.where(tf.not_equal(images[:,1:], zero), tf.ones_like(gen_images[..., 0]), tf.zeros_like(gen_images[..., 0]))
     # loss = tf.losses.compute_weighted_loss(loss, weighted)
     # # add mask to loss to evaluate on valid vectors
-    gt_images = images[:,1:]
-    gen_images1 = tf.where(tf.not_equal(images[:,1:], zero), gen_images, tf.zeros_like(gen_images))
-    gt_images = tf.where(tf.not_equal(images[:,1:], zero), gt_images, tf.zeros_like(gt_images))
-
-    loss = tf.nn.l2_loss(gen_images1-gt_images)
-
     # compute the speed value
-    gt_speed = tf.sqrt(gt_images[..., 0]**2 + gt_images[..., 1]**2)
-    gen_speed = tf.sqrt(gen_images[..., 0]**2 + gen_images[..., 1]**2)
-    loss += tf.nn.l2_loss(gt_speed - gen_speed)
+
+    gt_images = images[:, 1:]
+    # loss on the magnitude of speed
+    gt_speed = tf.sqrt(gt_images[..., 0] ** 2 + gt_images[..., 1] ** 2)
+    gen_speed = tf.sqrt(gen_images[..., 0] ** 2 + gen_images[..., 1] ** 2)
+    loss = tf.nn.l2_loss(gt_speed - gen_speed)
+
+    gen_images1 = tf.where(tf.not_equal(gt_images, zero), gen_images, tf.zeros_like(gen_images))
+    gt_images1 = tf.where(tf.not_equal(gt_images, zero), gt_images, tf.zeros_like(gt_images))
+
+    loss += tf.nn.l2_loss(gen_images1-gt_images1)
 
     #loss += tf.reduce_sum(tf.abs(gen_images - images[:,1:]))
     return [gen_images, loss]
