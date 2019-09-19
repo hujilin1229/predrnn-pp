@@ -196,7 +196,7 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + 'squash'
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
@@ -290,18 +290,18 @@ def main(argv=None):
                 cost2, _ = model.train(ims_rev, lr, mask_true, batch_size)
                 cost = (cost + cost2) / 2
 
-            cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
-                           FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
+            # cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
+            #                FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
 
-                print("Predicted Images shape is ", pred_seq_list.shape, flush=True)
-                print("Ground truth Images Value Range is ", np.min(ims), np.max(ims), flush=True)
-                print("Ground truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims), flush=True)
-
-                print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list), flush=True)
-                print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list), flush=True)
+                # print("Predicted Images shape is ", pred_seq_list.shape, flush=True)
+                # print("Ground truth Images Value Range is ", np.min(ims), np.max(ims), flush=True)
+                # print("Ground truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims), flush=True)
+                #
+                # print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list), flush=True)
+                # print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list), flush=True)
 
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
