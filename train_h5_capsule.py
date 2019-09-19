@@ -187,15 +187,6 @@ class Model(object):
 
 def main(argv=None):
 
-    # FLAGS.save_dir += FLAGS.dataset_name
-    # FLAGS.gen_frm_dir += FLAGS.dataset_name
-    # if tf.io.gfile.exists(FLAGS.save_dir):
-    #     tf.io.gfile.rmtree(FLAGS.save_dir)
-    # tf.io.gfile.makedirs(FLAGS.save_dir)
-    # if tf.io.gfile.exists(FLAGS.gen_frm_dir):
-    #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
-    # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
-
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
