@@ -429,8 +429,16 @@ def main(argv=None):
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
 
+            print("Evaluate on valid pixels for MAVG...")
             # Evaluate on large gt speeds for direction
             move_avg = np.stack(move_avg, axis=0)
+            mse = masked_mse_np(move_avg, gt_list, null_val=0.0)
+            speed_mse = masked_mse_np(move_avg[..., 0], gt_list[..., 0], null_val=0.0)
+            direction_mse = masked_mse_np(move_avg[..., 1], gt_list[..., 1], null_val=0.0)
+            print("The output mse is ", mse)
+            print("The speed mse is ", speed_mse)
+            print("The direction mse is ", direction_mse)
+
             large_gt_speed = move_avg[..., 1] > 0.5
             direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
             print("The direction mse on large speed gt is ", direction_mse)
