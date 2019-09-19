@@ -121,7 +121,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     gen_speed = tf.sqrt(gen_images[..., 0] ** 2 + gen_images[..., 1] ** 2)
     # loss = tf.nn.l2_loss(gt_speed - gen_speed)
 
-    loss = masked_mse_tf(preds=gen_images, labels=gt_speed, null_val=0.0)
+    loss = masked_mse_tf(preds=gen_speed, labels=gt_speed, null_val=0.0)
 
     gen_images1 = tf.where(tf.not_equal(gt_images, zero), gen_images, tf.zeros_like(gen_images))
     gt_images1 = tf.where(tf.not_equal(gt_images, zero), gt_images, tf.zeros_like(gt_images))
