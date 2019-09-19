@@ -66,7 +66,6 @@ tf.app.flags.DEFINE_integer('patch_size_height', 5,
                             'patch size on one dimension.')
 tf.app.flags.DEFINE_integer('patch_size_width', 4,
                             'patch size on one dimension.')
-
 tf.app.flags.DEFINE_boolean('layer_norm', True,
                             'whether to apply tensor layer norm.')
 # optimization

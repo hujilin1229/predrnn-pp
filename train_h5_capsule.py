@@ -314,6 +314,7 @@ def main(argv=None):
             batch_id = 0
             gt_list = []
             pred_list = []
+            pred_list_all = []
             pred_vec = []
             move_avg = []
             img_mse, ssim, psnr, fmae, sharp= [],[],[],[],[]
@@ -353,27 +354,26 @@ def main(argv=None):
                 mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
                 move_avg.append(mavg_results)
                 img_gen_list = []
+                img_gen_origin_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
                     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
                     gx = img_gen[:,i,:, :, :]
+
                     # print("img_gen shape is ", gx.shape)
                     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
                     # print("val speed: ", val_results_speed, flush=True)
                     val_results_heading = np.zeros_like(gx[..., 1])
-                    # if i == 0:
-                    #     print("Speed Range is ", np.max(val_results_speed), np.min(val_results_speed), flush=True)
-                    epsilon = 0.2
-                    # Evaluate on large speed predictions
-                    # gx[(np.abs(gx[..., 0]) < epsilon) | (np.abs(gx[..., 1]) < epsilon)] = 0.
-
-                    gx[mavg_results[:, i, :, :, 1] < epsilon] = 0.0
-                    val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
-                        mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
-
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
                     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
                     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
                     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] > 0)] = 1.0 / 255.0
+
+                    gen_speed_heading = np.stack([val_results_speed, val_results_heading], axis=-1)
+                    img_gen_origin_list.append(gen_speed_heading)
+
+                    epsilon = 0.2
+                    val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
+                        mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
 
                     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
                     img_gen_list.append(gx)
@@ -385,11 +385,9 @@ def main(argv=None):
                     img_mse[i] += mse
                     avg_mse += mse
 
-                    real_frm = np.uint8(x * 255)
-                    pred_frm = np.uint8(gx * 255)
-                    psnr[i] += metrics.batch_psnr(pred_frm, real_frm)
-
                 img_gen_list = np.stack(img_gen_list, axis=1)
+                img_gen_origin_list = np.stack(img_gen_origin_list, axis=1)
+                pred_list_all.append(img_gen_origin_list)
                 pred_list.append(img_gen_list)
                 pred_vec.append(img_gen)
                 test_input_handle.next()
@@ -405,11 +403,28 @@ def main(argv=None):
 
             gt_list = np.stack(gt_list, axis=0)
             pred_list = np.stack(pred_list, axis=0)
-            pred_vec = np.stack(pred_vec)
+            pred_list_all = np.stack(pred_list_all, axis=0)
 
+            print("Evaluate on every pixels....")
             mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
             speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
             direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
+            print("The output mse is ", mse)
+            print("The speed mse is ", speed_mse)
+            print("The direction mse is ", direction_mse)
+
+            print("Evaluate on valid pixels for Transformation...")
+            mse = masked_mse_np(pred_list, gt_list, null_val=0.0)
+            speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=0.0)
+            direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=0.0)
+            print("The output mse is ", mse)
+            print("The speed mse is ", speed_mse)
+            print("The direction mse is ", direction_mse)
+
+            print("Evaluate on valid pixels for No Transformation...")
+            mse = masked_mse_np(pred_list_all, gt_list, null_val=0.0)
+            speed_mse = masked_mse_np(pred_list_all[..., 0], gt_list[..., 0], null_val=0.0)
+            direction_mse = masked_mse_np(pred_list_all[..., 1], gt_list[..., 1], null_val=0.0)
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
@@ -420,17 +435,18 @@ def main(argv=None):
             direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
             print("The direction mse on large speed gt is ", direction_mse)
 
-            print("--------------------------------------------")
-            direction_wrong = np.not_equal(pred_list[..., 1], gt_list[..., 1])
-            pred_wrong = pred_vec[direction_wrong, :]
-            gt_wrong_direction = gt_list[direction_wrong, 1]
-            gt_wrong_speed = gt_list[direction_wrong, 0]
-            for i in range(20):
-                print("NO. ", i)
-                print(pred_wrong[i])
-                print(gt_wrong_speed[i])
-                print(gt_wrong_direction[i])
-            print("--------------------------------------------")
+            # print("--------------------------------------------")
+            # pred_vec = np.stack(pred_vec)
+            # direction_wrong = np.not_equal(pred_list[..., 1], gt_list[..., 1])
+            # pred_wrong = pred_vec[direction_wrong, :]
+            # gt_wrong_direction = gt_list[direction_wrong, 1]
+            # gt_wrong_speed = gt_list[direction_wrong, 0]
+            # for i in range(20):
+            #     print("NO. ", i)
+            #     print(pred_wrong[i])
+            #     print(gt_wrong_speed[i])
+            #     print(gt_wrong_direction[i])
+            # print("--------------------------------------------")
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
