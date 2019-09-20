@@ -348,6 +348,7 @@ def main(argv=None):
 
             if min_val_loss < mse:
                 min_val_loss = mse
+                print("Current Min Val Loss is ", min_val_loss)
                 model.save_to_best_mode()
             # print("Indices: ", indicies, flush=True)
             # print("Output shape is ", pred_list.shape, flush=True)
