@@ -346,7 +346,7 @@ def main(argv=None):
             print("The speed mse is ", speed_mse, flush=True)
             print("The direction mse is ", direction_mse, flush=True)
 
-            if min_val_loss < mse:
+            if min_val_loss > mse:
                 min_val_loss = mse
                 print("Current Min Val Loss is ", min_val_loss)
                 model.save_to_best_mode()
