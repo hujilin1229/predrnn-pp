@@ -101,6 +101,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
             x_gen = tf.reshape(x_gen, [-1, FLAGS.img_height, FLAGS.img_width,
                                        FLAGS.patch_size_height*FLAGS.patch_size_width, FLAGS.img_channel])
             x_gen = squash(x_gen, dim=-1) # makes a unit vector
+
             x_gen = tf.reshape(x_gen, [-1, FLAGS.img_height, FLAGS.img_width,
                                        FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel])
             gen_images.append(x_gen)

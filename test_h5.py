@@ -239,7 +239,8 @@ def main(argv=None):
                                   FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel))
             img_gen = model.test(test_dat, mask_true, batch_size)
             # concat outputs of different gpus along batch
-            img_gen = np.concatenate(img_gen)
+            # img_gen = np.concatenate(img_gen)
+            img_gen = img_gen[0]
             img_gen = np.maximum(img_gen, 0)
             img_gen = np.minimum(img_gen, 1)
             img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
