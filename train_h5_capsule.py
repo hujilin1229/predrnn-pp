@@ -196,7 +196,8 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash'
+    heading = 1
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + str(heading)
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
@@ -246,6 +247,11 @@ def main(argv=None):
         heading_image = (heading_image // 85).astype(np.int8) + 1
         heading_image[tem_data[:, :, :, :, 2] == 0] = 0
         heading_image = heading_table[heading_image]
+        # select the corresponding data
+        heading_selected = np.zeros_like(heading_image, np.int8)
+        heading_selected[heading_image == heading] = heading
+        heading_image = heading_selected
+
         speed_on_axis = np.expand_dims(imss[:, :, :, :, 1] / np.sqrt(2), axis=-1)
         imss = speed_on_axis * heading_image
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
@@ -338,6 +344,11 @@ def main(argv=None):
                 heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
                 heading_image[tem_data[:, :, :, :, 2] == 0] = 0
+                # select the corresponding data
+                heading_selected = np.zeros_like(heading_image, np.int8)
+                heading_selected[heading_image == heading] = heading
+                heading_image = heading_selected
+
                 heading_image = heading_table[heading_image]
                 speed_on_axis = np.expand_dims(test_ims[:, :, :, :, 1] / np.sqrt(2), axis=-1)
                 test_ims = speed_on_axis * heading_image

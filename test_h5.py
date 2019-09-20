@@ -44,6 +44,8 @@ tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
+tf.app.flags.DEFINE_string('best_model', '',
+                           'file of the best model to initialize from.')
 tf.app.flags.DEFINE_integer('input_length', 6,
                             'encoder hidden states.')
 tf.app.flags.DEFINE_integer('seq_length', 9,
@@ -145,10 +147,13 @@ class Model(object):
         configProt.allow_soft_placement = True
         self.sess = tf.Session(config = configProt)
         self.sess.run(init)
-        if FLAGS.pretrained_model:
-            print("pretrained_model dir: ", FLAGS.pretrained_model)
-            print("latest checkpoint: ", tf.train.latest_checkpoint(FLAGS.pretrained_model))
-            self.saver.restore(self.sess, tf.train.latest_checkpoint(FLAGS.pretrained_model))
+        # if FLAGS.pretrained_model:
+        #     print("pretrained_model dir: ", FLAGS.pretrained_model)
+        #     print("latest checkpoint: ", tf.train.latest_checkpoint(FLAGS.pretrained_model))
+        #     self.saver.restore(self.sess, tf.train.latest_checkpoint(FLAGS.pretrained_model))
+        if FLAGS.best_model:
+            print("the best model dir: ", FLAGS.best_model)
+            self.saver.restore(self.sess, FLAGS.best_model)
 
     def train(self, inputs, lr, mask_true, batch_size):
         feed_dict = {self.x: inputs}
@@ -183,6 +188,7 @@ def main(argv=None):
 
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
     print(FLAGS.save_dir)
+    FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
     # FLAGS.save_dir += FLAGS.dataset_name
     FLAGS.pretrained_model = FLAGS.save_dir
 
