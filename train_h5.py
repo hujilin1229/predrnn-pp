@@ -44,6 +44,8 @@ tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
+tf.app.flags.DEFINE_string('best_model', '',
+                           'file of the best model to initialize from.')
 tf.app.flags.DEFINE_integer('input_length', 6,
                             'encoder hidden states.')
 tf.app.flags.DEFINE_integer('seq_length', 9,
@@ -165,6 +167,10 @@ class Model(object):
         self.saver.save(self.sess, checkpoint_path, global_step=itr)
         print('saved to ' + FLAGS.save_dir, flush=True)
 
+    def save_to_best_mode(self):
+        self.saver.save(self.sess, FLAGS.best_model)
+        print('saved to ' + FLAGS.best_model, flush=True)
+
 def main(argv=None):
 
     # FLAGS.save_dir += FLAGS.dataset_name
@@ -177,6 +183,7 @@ def main(argv=None):
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
+    FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
@@ -212,6 +219,7 @@ def main(argv=None):
     delta = 0.00002
     base = 0.99998
     eta = 1
+    min_val_loss = 1.0
 
     for itr in range(1, FLAGS.max_iterations + 1):
         if train_input_handle.no_batch_left():
@@ -337,6 +345,10 @@ def main(argv=None):
             print("The volume mse is ", volume_mse, flush=True)
             print("The speed mse is ", speed_mse, flush=True)
             print("The direction mse is ", direction_mse, flush=True)
+
+            if min_val_loss < mse:
+                min_val_loss = mse
+                model.save_to_best_mode()
             # print("Indices: ", indicies, flush=True)
             # print("Output shape is ", pred_list.shape, flush=True)
 
