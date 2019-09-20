@@ -87,6 +87,9 @@ tf.app.flags.DEFINE_integer('patch_size_height', 5,
 tf.app.flags.DEFINE_integer('patch_size_width', 4,
                             'patch size on one dimension.')
 
+tf.app.flags.DEFINE_integer('heading', 1,
+                            'the select heading.')
+
 tf.app.flags.DEFINE_boolean('layer_norm', True,
                             'whether to apply tensor layer norm.')
 # optimization
@@ -196,7 +199,7 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
-    heading = 1
+    heading = FLAGS.heading
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + str(heading)
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
