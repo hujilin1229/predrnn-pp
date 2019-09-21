@@ -249,6 +249,7 @@ def main(argv=None):
         # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
         heading_image = (heading_image // 85).astype(np.int8) + 1
         heading_image[tem_data[:, :, :, :, 2] == 0] = 0
+        print("Heading Unique", np.unique(heading_image), flush=True)
         heading_image = heading_table[heading_image]
         # select the corresponding data
         heading_selected = np.zeros_like(heading_image, np.int8)
