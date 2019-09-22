@@ -53,7 +53,7 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     if name not in networks_map:
         raise ValueError('Name of network unknown %s' % name)
 
-    heading_table = np.array([[0, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]], dtype=np.float32)
+    heading_table = tf.Tensor([[0, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]], shape=(5, 2), dtype=tf.float32)
     func = networks_map[name]
     gt_images = []
     pred_images = []
@@ -68,6 +68,7 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
         # print("Heading Unique", np.unique(heading_image), flush=True)
         # select the corresponding data
         heading_selected = tf.where(heading_image == i, heading_image, tf.zeros_like(heading_image, tf.int8))
+
         heading_image = heading_table[heading_selected]
 
         speed_on_axis = np.expand_dims(images[:, :, :, :, 1] / tf.sqrt(2), axis=-1)
