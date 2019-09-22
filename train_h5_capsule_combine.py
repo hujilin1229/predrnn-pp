@@ -55,12 +55,12 @@ tf.app.flags.DEFINE_string('train_data_paths',
 tf.app.flags.DEFINE_string('valid_data_paths',
                            './data/', # 'data/moving-mnist-example/moving-mnist-valid.npz',
                            'validation data paths.')
-tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp_capsule',
+tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp_capsule_multitask',
                             'dir to store trained net.')
-tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp_capsule',
+tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp_capsule_multitask',
                            'dir to store result.')
 # model
-tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_capsule',
+tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_capsule_multi_task',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
