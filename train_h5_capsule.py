@@ -362,8 +362,8 @@ def main(argv=None):
                 # mavg filtered results
                 mavg_results_all = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
                 mavg_results = np.zeros_like(mavg_results_all)
-                mavg_results[heading_image[:, FLAGS.input_length:, ...] == heading] = \
-                    mavg_results_all[heading_image[:, FLAGS.input_length:, ...] == heading]
+                mavg_results[heading_image[:, FLAGS.input_length:, ...] == heading, :] = \
+                    mavg_results_all[heading_image[:, FLAGS.input_length:, ...] == heading, :]
 
                 move_avg.append(mavg_results)
 
