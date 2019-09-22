@@ -87,6 +87,8 @@ tf.app.flags.DEFINE_integer('patch_size_height', 5,
                             'patch size on one dimension.')
 tf.app.flags.DEFINE_integer('patch_size_width', 4,
                             'patch size on one dimension.')
+tf.app.flags.DEFINE_integer('heading', 1,
+                            'the select heading.')
 
 tf.app.flags.DEFINE_boolean('layer_norm', True,
                             'whether to apply tensor layer norm.')
@@ -110,6 +112,8 @@ tf.app.flags.DEFINE_string('mode', 'validation',
                            'COMMA separated number of units in a convlstm layer.')
 tf.app.flags.DEFINE_integer('test_time', 16,
                            'COMMA separated number of units in a convlstm layer.')
+tf.app.flags.DEFINE_string('loss_func', 'L1+L2+VALID',
+                           'the applied loss function "L1+L2+VALID" or "L1+L2+ALL" or "L1+VALID" or "L1+VALID".')
 
 class Model(object):
     def __init__(self):
@@ -193,13 +197,18 @@ class Model(object):
 
 def main(argv=None):
 
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash'
+    # FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash'
+    heading_dict = {1: 1, 2: 85, 3: 170, 4: 255, 0: 0}
+    heading = FLAGS.heading
+    loss_func = 'L1+L2+VALID'
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + loss_func + str(
+        heading)
     FLAGS.pretrained_model = FLAGS.save_dir
 
     test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_' + FLAGS.mode)
     sub_files = preprocess.list_filenames(test_data_paths, [])
 
-    output_path = f'./Results/predrnn/t{FLAGS.test_time}_{FLAGS.mode}/'
+    output_path = f'./Results/predrnn/t{FLAGS.test_time}_{FLAGS.mode}/{loss_func}'
     # output_path = f'./Results/predrnn/t14/'
     preprocess.create_directory_structure(output_path)
 
@@ -238,6 +247,11 @@ def main(argv=None):
             heading_image = test_ims[:, :, :, :, 2]
             heading_image = (heading_image // 85).astype(np.int8) + 1
             heading_image[tem_data[:, :, :, :, 2] == 0] = 0
+
+            # convert the data into speed vectors
+            heading_selected = np.zeros_like(heading_image, np.int8)
+            heading_selected[heading_image == heading] = heading
+            heading_image = heading_selected
             heading_image = heading_table[heading_image]
             speed_on_axis = np.expand_dims(test_ims[:, :, :, :, 1].astype(np.float32) / 255.0 / np.sqrt(2), axis=-1)
             test_ims = speed_on_axis * heading_image
@@ -255,96 +269,100 @@ def main(argv=None):
             # concat outputs of different gpus along batch
             img_gen = np.concatenate(img_gen)
             img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
-            # print("Image Generates Shape is ", img_gen.shape)
-            # MSE per frame
-            mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
-            move_avg.append(mavg_results)
-            img_gen_list = []
-            img_gen_origin_list = []
-            for i in range(FLAGS.seq_length - FLAGS.input_length):
-                x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
-                gx = img_gen[:,i,:, :, :]
 
-                # print("img_gen shape is ", gx.shape)
-                val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
-                # print("val speed: ", val_results_speed, flush=True)
-                val_results_heading = np.zeros_like(gx[..., 1])
-                val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
-                val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
-                val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
-                val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] > 0)] = 1.0 / 255.0
-
-                gen_speed_heading = np.stack([val_results_speed, val_results_heading], axis=-1)
-                img_gen_origin_list.append(gen_speed_heading)
-
-                epsilon = 0.2
-                val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
-                    mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
-
-                gx = np.stack([val_results_speed, val_results_heading], axis=-1)
-                img_gen_list.append(gx)
-
-                gx = np.maximum(gx, 0)
-                gx = np.minimum(gx, 1)
-                mse = np.square(x - gx).sum()
-                avg_mse += mse
-
-            img_gen_list = np.stack(img_gen_list, axis=1)
-            img_gen_origin_list = np.stack(img_gen_origin_list, axis=1)
-            pred_list_all.append(img_gen_origin_list)
-            pred_list.append(img_gen_list)
-            pred_vec.append(img_gen)
-
-            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', 'pred'+f)
+            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f'{heading}' + f)
             preprocess.write_data(img_gen, outfile)
 
-            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', 'gt' + f)
-            preprocess.write_data(test_ims[:, FLAGS.input_length:, :, :, 1:], outfile)
+            # print("Image Generates Shape is ", img_gen.shape)
+            # MSE per frame
+            # mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
+            # move_avg.append(mavg_results)
+            # img_gen_list = []
+            # img_gen_origin_list = []
+            # for i in range(FLAGS.seq_length - FLAGS.input_length):
+            #     x = tem_data[:,i + FLAGS.input_length,:,:, 1:]
+            #     gx = img_gen[:,i,:, :, :]
+            #
+            #     # print("img_gen shape is ", gx.shape)
+            #     val_results_speed = np.sqrt(gx[..., 0] ** 2 + gx[..., 1] ** 2)
+            #     # print("val speed: ", val_results_speed, flush=True)
+            #     val_results_heading = np.zeros_like(gx[..., 1])
+            #     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] > 0)] = 85.0 / 255.0
+            #     val_results_heading[(gx[..., 0] > 0) & (gx[..., 1] < 0)] = 255.0 / 255.0
+            #     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] < 0)] = 170.0 / 255.0
+            #     val_results_heading[(gx[..., 0] < 0) & (gx[..., 1] > 0)] = 1.0 / 255.0
+            #
+            #     gen_speed_heading = np.stack([val_results_speed, val_results_heading], axis=-1)
+            #     img_gen_origin_list.append(gen_speed_heading)
+            #
+            #     epsilon = 0.2
+            #     val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
+            #         mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
+            #
+            #     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
+            #     img_gen_list.append(gx)
+            #
+            #     gx = np.maximum(gx, 0)
+            #     gx = np.minimum(gx, 1)
+            #     mse = np.square(x - gx).sum()
+            #     avg_mse += mse
 
-            outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', 'mavg' + f)
-            preprocess.write_data(mavg_results, outfile)
+            # img_gen_list = np.stack(img_gen_list, axis=1)
+            # img_gen_origin_list = np.stack(img_gen_origin_list, axis=1)
+            # pred_list_all.append(img_gen_origin_list)
+            # pred_list.append(img_gen_list)
+            # pred_vec.append(img_gen)
 
-    gt_list = np.stack(gt_list, axis=0)
-    pred_list = np.stack(pred_list, axis=0)
-    pred_list_all = np.stack(pred_list_all, axis=0)
+            # outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', 'pred'+f)
+            # preprocess.write_data(img_gen, outfile)
 
-    print("Evaluate on every pixels....")
-    mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
-    speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
-    direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
-    print("The output mse is ", mse)
-    print("The speed mse is ", speed_mse)
-    print("The direction mse is ", direction_mse)
+            # outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', 'gt' + f)
+            # preprocess.write_data(test_ims[:, FLAGS.input_length:, :, :, 1:], outfile)
+            #
+            # outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', 'mavg' + f)
+            # preprocess.write_data(mavg_results, outfile)
 
-    print("Evaluate on valid pixels for Transformation...")
-    mse = masked_mse_np(pred_list, gt_list, null_val=0.0)
-    speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=0.0)
-    direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=0.0)
-    print("The output mse is ", mse)
-    print("The speed mse is ", speed_mse)
-    print("The direction mse is ", direction_mse)
-
-    print("Evaluate on valid pixels for No Transformation...")
-    mse = masked_mse_np(pred_list_all, gt_list, null_val=0.0)
-    speed_mse = masked_mse_np(pred_list_all[..., 0], gt_list[..., 0], null_val=0.0)
-    direction_mse = masked_mse_np(pred_list_all[..., 1], gt_list[..., 1], null_val=0.0)
-    print("The output mse is ", mse)
-    print("The speed mse is ", speed_mse)
-    print("The direction mse is ", direction_mse)
-
-    print("Evaluate on valid pixels for MAVG...")
-    # Evaluate on large gt speeds for direction
-    move_avg = np.stack(move_avg, axis=0)
-    mse = masked_mse_np(move_avg[..., 1:], gt_list, null_val=0.0)
-    speed_mse = masked_mse_np(move_avg[..., 1], gt_list[..., 0], null_val=0.0)
-    direction_mse = masked_mse_np(move_avg[..., 2], gt_list[..., 1], null_val=0.0)
-    print("The output mse is ", mse)
-    print("The speed mse is ", speed_mse)
-    print("The direction mse is ", direction_mse)
-
-    large_gt_speed = move_avg[..., 1] > 0.5
-    direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
-    print("The direction mse on large speed gt is ", direction_mse)
+    # gt_list = np.stack(gt_list, axis=0)
+    # pred_list = np.stack(pred_list, axis=0)
+    # pred_list_all = np.stack(pred_list_all, axis=0)
+    #
+    # print("Evaluate on every pixels....")
+    # mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
+    # speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
+    # direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
+    # print("The output mse is ", mse)
+    # print("The speed mse is ", speed_mse)
+    # print("The direction mse is ", direction_mse)
+    #
+    # print("Evaluate on valid pixels for Transformation...")
+    # mse = masked_mse_np(pred_list, gt_list, null_val=0.0)
+    # speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=0.0)
+    # direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=0.0)
+    # print("The output mse is ", mse)
+    # print("The speed mse is ", speed_mse)
+    # print("The direction mse is ", direction_mse)
+    #
+    # print("Evaluate on valid pixels for No Transformation...")
+    # mse = masked_mse_np(pred_list_all, gt_list, null_val=0.0)
+    # speed_mse = masked_mse_np(pred_list_all[..., 0], gt_list[..., 0], null_val=0.0)
+    # direction_mse = masked_mse_np(pred_list_all[..., 1], gt_list[..., 1], null_val=0.0)
+    # print("The output mse is ", mse)
+    # print("The speed mse is ", speed_mse)
+    # print("The direction mse is ", direction_mse)
+    #
+    # print("Evaluate on valid pixels for MAVG...")
+    # # Evaluate on large gt speeds for direction
+    # move_avg = np.stack(move_avg, axis=0)
+    # mse = masked_mse_np(move_avg[..., 1:], gt_list, null_val=0.0)
+    # speed_mse = masked_mse_np(move_avg[..., 1], gt_list[..., 0], null_val=0.0)
+    # direction_mse = masked_mse_np(move_avg[..., 2], gt_list[..., 1], null_val=0.0)
+    # print("The output mse is ", mse)
+    # print("The speed mse is ", speed_mse)
+    # print("The direction mse is ", direction_mse)
+    #
+    # large_gt_speed = move_avg[..., 1] > 0.5
+    # direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
+    # print("The direction mse on large speed gt is ", direction_mse)
 
 if __name__ == '__main__':
     tf.app.run()
