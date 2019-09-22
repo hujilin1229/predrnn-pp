@@ -130,7 +130,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # # loss += tf.nn.l2_loss(gen_images1-gt_images1)
     # loss += masked_mse_tf(gen_images1, gt_images1, null_val=0.0)
 
-    loss += masked_mse_tf(gen_images, gt_images, null_val=0.0)
+    loss = masked_mse_tf(gen_images, gt_images, null_val=0.0)
 
     return [gen_images, loss]
 
