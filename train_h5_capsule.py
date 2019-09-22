@@ -421,7 +421,7 @@ def main(argv=None):
             # GT filtered to the direction required
             gt_list = np.zeros_like(gt_list_all)
             print("Ground Truth Heading is ", np.unique(gt_list_all[..., 1]*255))
-            gt_list[gt_list_all[..., 1]*255 == heading] = gt_list[gt_list_all[..., 1]*255 == heading]
+            gt_list[gt_list_all[..., 1]*255 == heading] = gt_list_all[gt_list_all[..., 1]*255 == heading]
 
             pred_list = np.stack(pred_list, axis=0)
             pred_list_all = np.stack(pred_list_all, axis=0)
