@@ -318,6 +318,7 @@ def main(argv=None):
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
             print('test...', flush=True)
+            epsilon = 0.2
             batch_size = len(indicies)
             test_input_handle.begin(do_shuffle = False)
             # res_path = os.path.join(FLAGS.gen_frm_dir, str(itr))
@@ -396,7 +397,7 @@ def main(argv=None):
                     img_gen_origin_list.append(gen_speed_heading)
 
                     # Transformation according to moving average direction when mavg speed is small
-                    epsilon = 0.2
+
                     val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
                         mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
                     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
@@ -467,10 +468,11 @@ def main(argv=None):
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
-            large_gt_speed = move_avg[..., 1] > 0.5
+
+            large_gt_speed = move_avg[..., 1] >= epsilon
             move_avg[..., 2][large_gt_speed] = pred_list_all[large_gt_speed, 1]
             direction_mse = masked_mse_np(move_avg[..., 2], gt_list[..., 1], null_val=0.0)
-            print(f"The direction of combined mavg and large speed~(0.5) prediction is ", direction_mse)
+            print(f"The direction of combined mavg and large speed~({epsilon}) prediction is ", direction_mse)
 
             direction_mse = masked_mse_np(pred_list_all[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=0.0)
             print("The direction mse on large speed gt is ", direction_mse)
