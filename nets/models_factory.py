@@ -70,7 +70,7 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
         heading_selected = tf.where(heading_image == i, heading_image, tf.zeros_like(heading_image, tf.int32))
         heading_image = tf.nn.embedding_lookup(heading_table, heading_selected)
 
-        speed_on_axis = np.expand_dims(images[:, :, :, :, 1] / tf.sqrt(2), axis=-1)
+        speed_on_axis = tf.expand_dims(images[:, :, :, :, 1] / np.sqrt(2), axis=-1)
         imss = speed_on_axis * heading_image
 
         gen_images, loss = func(imss, mask_true, num_layers, num_hidden, filter_size,
