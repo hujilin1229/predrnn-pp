@@ -60,7 +60,7 @@ tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp_capsule_multitask
 tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp_capsule_multitask',
                            'dir to store result.')
 # model
-tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_capsule_multi_task',
+tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_capsule_multitask',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
