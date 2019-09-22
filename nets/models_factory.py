@@ -53,30 +53,42 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     if name not in networks_map:
         raise ValueError('Name of network unknown %s' % name)
 
-    heading_table = tf.constant([[0, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]], shape=(5, 2), dtype=tf.float32)
     func = networks_map[name]
     gt_images = []
     pred_images = []
     losses = []
+    shape = images.get_shape().as_list()
+    shape1 = shape[:-1] + [shape[-1]//2, 2]
+    images = tf.reshape(images, shape1)
     for i in range(1, 5):
-        # tem_data = images.copy()
-        heading_image = images[:, :, :, :, 2] * 255
-        # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
-        heading_image = tf.cast(heading_image // 85, tf.int32) + 1
-        heading_image = tf.where(images[:, :, :, :, 2] == 0, tf.zeros_like(heading_image, tf.int32), heading_image)
-        # heading_image[images[:, :, :, :, 2] == 0] = 0
-        # print("Heading Unique", np.unique(heading_image), flush=True)
-        # select the corresponding data
-        heading_selected = tf.where(heading_image == i, heading_image, tf.zeros_like(heading_image, tf.int32))
-        heading_image = tf.nn.embedding_lookup(heading_table, heading_selected)
+        # # tem_data = images.copy()
+        # heading_image = images[:, :, :, :, 2] * 255
+        # # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
+        # heading_image = tf.cast(heading_image // 85, tf.int32) + 1
+        # heading_image = tf.where(images[:, :, :, :, 2] == 0, tf.zeros_like(heading_image, tf.int32), heading_image)
+        # # heading_image[images[:, :, :, :, 2] == 0] = 0
+        # # print("Heading Unique", np.unique(heading_image), flush=True)
+        # # select the corresponding data
+        # heading_selected = tf.where(heading_image == i, heading_image, tf.zeros_like(heading_image, tf.int32))
+        # heading_image = tf.nn.embedding_lookup(heading_table, heading_selected)
+        #
+        # speed_on_axis = tf.expand_dims(images[:, :, :, :, 1] / np.sqrt(2), axis=-1)
+        # imss = speed_on_axis * heading_image
+        if i == 1:
+            imss = tf.where((images[..., 0] < 0) & (images[..., 1] > 0), images, tf.zeros_like(images))
+        elif i == 2:
+            imss = tf.where((images[..., 0] > 0) & (images[..., 1] > 0), images, tf.zeros_like(images))
+        elif i == 3:
+            imss = tf.where((images[..., 0] < 0) & (images[..., 1] < 0), images, tf.zeros_like(images))
+        else:
+            imss = tf.where((images[..., 0] > 0) & (images[..., 1] < 0), images, tf.zeros_like(images))
 
-        speed_on_axis = tf.expand_dims(images[:, :, :, :, 1] / np.sqrt(2), axis=-1)
-        imss = speed_on_axis * heading_image
+        gt_images.append(imss[:, 1:, ...])
 
+        imss = tf.reshape(imss, shape)
         gen_images, loss = func(imss, mask_true, num_layers, num_hidden, filter_size,
                                 stride, seq_length, input_length, tln, batch_size=batch_size)
 
-        gt_images.append(heading_image)
         pred_images.append(gen_images)
         losses.append(loss)
 
