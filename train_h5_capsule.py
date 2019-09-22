@@ -422,6 +422,9 @@ def main(argv=None):
             gt_list = np.zeros_like(gt_list_all)
             print("Ground Truth Heading is ", np.unique(gt_list_all[..., 1]*255))
             gt_list[gt_list_all[..., 1]*255 == heading] = gt_list_all[gt_list_all[..., 1]*255 == heading]
+            print("GT shape is ", gt_list.shape)
+            print("Filtered GT speed is ", np.min(gt_list[..., 0]), np.max(gt_list[..., 0]))
+            print("Filtered GT direction is ", np.unique(gt_list[..., 1]))
 
             pred_list = np.stack(pred_list, axis=0)
             pred_list_all = np.stack(pred_list_all, axis=0)
