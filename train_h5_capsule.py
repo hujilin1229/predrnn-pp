@@ -350,6 +350,7 @@ def main(argv=None):
                 heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
                 heading_image[tem_data[:, :, :, :, 2] == 0] = 0
+                cvt_heading = heading_image.copy()
                 # select the corresponding data
                 heading_selected = np.zeros_like(heading_image, np.int8)
                 heading_selected[heading_image == heading] = heading
@@ -364,9 +365,9 @@ def main(argv=None):
                 mavg_results = np.zeros_like(mavg_results_all)
                 print("mavg_results shape is ", mavg_results.shape)
                 print("heading shape is ", heading_image[:, FLAGS.input_length:, ...].shape)
-                heading_image = np.expand_dims(heading_image, axis=-1)
-                mavg_results[heading_image[:, FLAGS.input_length:, ...] == heading] = \
-                    mavg_results_all[heading_image[:, FLAGS.input_length:, ...] == heading]
+                # heading_image = np.expand_dims(heading_image, axis=-1)
+                mavg_results[cvt_heading[:, FLAGS.input_length:, ...] == heading] = \
+                    mavg_results_all[cvt_heading[:, FLAGS.input_length:, ...] == heading]
 
                 move_avg.append(mavg_results)
 
