@@ -120,7 +120,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # loss on the magnitude of speed
     gt_speed = tf.sqrt(gt_images[..., 0] ** 2 + gt_images[..., 1] ** 2)
     gen_speed = tf.sqrt(gen_images[..., 0] ** 2 + gen_images[..., 1] ** 2)
-    loss = masked_mse_tf(gen_speed, gt_speed, null_val=np.nan)
+    loss = masked_mse_tf(gen_speed, gt_speed, null_val=0.0)
     #
     # loss = masked_mse_tf(preds=gen_speed, labels=gt_speed, null_val=0.0)
     #
@@ -130,7 +130,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # # loss += tf.nn.l2_loss(gen_images1-gt_images1)
     # loss += masked_mse_tf(gen_images1, gt_images1, null_val=0.0)
 
-    loss += masked_mse_tf(gen_images, gt_images, null_val=np.nan)
+    loss += masked_mse_tf(gen_images, gt_images, null_val=0.0)
 
     return [gen_images, loss]
 
