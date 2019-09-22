@@ -344,18 +344,19 @@ def main(argv=None):
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
                 test_ims = test_input_handle.get_test_batch(indicies)
-
+                # get the ground truth
                 gt_list.append(test_ims[:, FLAGS.input_length:, :, :, 1:])
+                # cvt the heading to 0, 1, 2, 3, 4
                 tem_data = test_ims.copy()
                 heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
                 heading_image[tem_data[:, :, :, :, 2] == 0] = 0
                 cvt_heading = heading_image.copy()
-                # select the corresponding data
+
+                # convert the data into speed vectors
                 heading_selected = np.zeros_like(heading_image, np.int8)
                 heading_selected[heading_image == heading] = heading
                 heading_image = heading_selected
-
                 heading_image = heading_table[heading_image]
                 speed_on_axis = np.expand_dims(test_ims[:, :, :, :, 1] / np.sqrt(2), axis=-1)
                 test_ims = speed_on_axis * heading_image
@@ -363,18 +364,13 @@ def main(argv=None):
                 # mavg filtered results
                 mavg_results_all = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
                 mavg_results = np.zeros_like(mavg_results_all)
-                print("mavg_results shape is ", mavg_results.shape)
-                print("heading shape is ", heading_image[:, FLAGS.input_length:, ...].shape)
                 # heading_image = np.expand_dims(heading_image, axis=-1)
                 mavg_results[cvt_heading[:, FLAGS.input_length:, ...] == heading] = \
                     mavg_results_all[cvt_heading[:, FLAGS.input_length:, ...] == heading]
-
                 move_avg.append(mavg_results)
-
 
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 img_gen = model.test(test_dat, mask_true, batch_size)
-
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
@@ -472,23 +468,10 @@ def main(argv=None):
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
 
-
             large_gt_speed = move_avg[..., 1] > 0.5
-            direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=0.0)
             print("The direction mse on large speed gt is ", direction_mse)
 
-            # print("--------------------------------------------")
-            # pred_vec = np.stack(pred_vec)
-            # direction_wrong = np.not_equal(pred_list[..., 1], gt_list[..., 1])
-            # pred_wrong = pred_vec[direction_wrong, :]
-            # gt_wrong_direction = gt_list[direction_wrong, 1]
-            # gt_wrong_speed = gt_list[direction_wrong, 0]
-            # for i in range(20):
-            #     print("NO. ", i)
-            #     print(pred_wrong[i])
-            #     print(gt_wrong_speed[i])
-            #     print(gt_wrong_direction[i])
-            # print("--------------------------------------------")
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
