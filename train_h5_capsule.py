@@ -201,7 +201,7 @@ def main(argv=None):
 
     heading_dict = {1: 1, 2:85, 3: 170, 4: 255, 0:0}
     heading = FLAGS.heading
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + 'L1+L2+ALL' + str(heading)
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + 'L1+L2+VALID' + str(heading)
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
