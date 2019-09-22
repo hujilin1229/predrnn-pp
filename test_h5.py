@@ -152,8 +152,13 @@ class Model(object):
         #     print("latest checkpoint: ", tf.train.latest_checkpoint(FLAGS.pretrained_model))
         #     self.saver.restore(self.sess, tf.train.latest_checkpoint(FLAGS.pretrained_model))
         if FLAGS.best_model:
-            print("the best model dir: ", FLAGS.best_model)
-            self.saver.restore(self.sess, FLAGS.best_model)
+            try:
+                print("the best model dir: ", FLAGS.best_model)
+                self.saver.restore(self.sess, FLAGS.best_model)
+            except:
+                print("pretrained_model dir: ", FLAGS.pretrained_model)
+                print("latest checkpoint: ", tf.train.latest_checkpoint(FLAGS.pretrained_model))
+                self.saver.restore(self.sess, tf.train.latest_checkpoint(FLAGS.pretrained_model))
 
     def train(self, inputs, lr, mask_true, batch_size):
         feed_dict = {self.x: inputs}
