@@ -57,9 +57,10 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     gt_images = []
     pred_images = []
     losses = []
-    shape1 = images.get_shape().as_list()
-    shape1 = [-1] + shape1[1:-1] + [shape1[-1]//2, 2]
-    images = tf.reshape(images, tf.shape(shape1))
+    original_shape = images.get_shape()
+    shape1 = original_shape.as_list()
+    shape1 = shape1[:-1] + [shape1[-1]//2, 2]
+    images = tf.reshape(images, tf.TensorShape(shape1))
     for i in range(1, 5):
         # # tem_data = images.copy()
         # heading_image = images[:, :, :, :, 2] * 255
