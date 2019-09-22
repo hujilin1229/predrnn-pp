@@ -67,8 +67,7 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
         # heading_image[images[:, :, :, :, 2] == 0] = 0
         # print("Heading Unique", np.unique(heading_image), flush=True)
         # select the corresponding data
-        heading_selected = tf.zeros_like(heading_image, tf.int8)
-        heading_selected[heading_image == i] = i
+        heading_selected = tf.where(heading_image == i, heading_image, tf.zeros_like(heading_image))
         heading_image = heading_selected
         heading_image = heading_table[heading_image]
 
