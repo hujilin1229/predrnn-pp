@@ -362,8 +362,11 @@ def main(argv=None):
                 # mavg filtered results
                 mavg_results_all = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
                 mavg_results = np.zeros_like(mavg_results_all)
-                mavg_results[heading_image[:, FLAGS.input_length:, ...] == heading, :] = \
-                    mavg_results_all[heading_image[:, FLAGS.input_length:, ...] == heading, :]
+                print("mavg_results shape is ", mavg_results.shape)
+                print("heading shape is ", heading_image[:, FLAGS.input_length:, ...].shape)
+                heading_image = np.expand_dims(heading_image, axis=-1)
+                mavg_results[heading_image[:, FLAGS.input_length:, ...] == heading] = \
+                    mavg_results_all[heading_image[:, FLAGS.input_length:, ...] == heading]
 
                 move_avg.append(mavg_results)
 
