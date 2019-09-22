@@ -472,7 +472,7 @@ def main(argv=None):
             direction_mse = masked_mse_np(move_avg[..., 2], gt_list[..., 1], null_val=0.0)
             print(f"The direction of combined mavg and large speed~(0.5) prediction is ", direction_mse)
 
-            direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=0.0)
+            direction_mse = masked_mse_np(pred_list_all[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=0.0)
             print("The direction mse on large speed gt is ", direction_mse)
 
 
