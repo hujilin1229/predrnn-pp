@@ -53,7 +53,7 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     if name not in networks_map:
         raise ValueError('Name of network unknown %s' % name)
 
-    heading_table = tf.Tensor([[0, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]], shape=(5, 2), dtype=tf.float32)
+    heading_table = tf.constant([[0, 0], [-1, 1], [1, 1], [-1, -1], [1, -1]], shape=(5, 2), dtype=tf.float32)
     func = networks_map[name]
     gt_images = []
     pred_images = []
