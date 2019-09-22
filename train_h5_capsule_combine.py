@@ -134,7 +134,7 @@ class Model(object):
         num_layers = len(num_hidden)
         with tf.variable_scope(tf.get_variable_scope()):
             # define a model
-            output_list = models_factory.construct_model(
+            output_list = models_factory.construct_multi_task_model(
                 FLAGS.model_name, self.x,
                 self.mask_true,
                 num_layers, num_hidden,
