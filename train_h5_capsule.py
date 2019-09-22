@@ -199,6 +199,7 @@ def main(argv=None):
     #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
+    heading_dict = {1: 1, 2:85, 3: 170, 4: 255, 0:0}
     heading = FLAGS.heading
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + str(heading)
     FLAGS.gen_frm_dir += FLAGS.dataset_name
@@ -421,7 +422,7 @@ def main(argv=None):
             # GT filtered to the direction required
             gt_list = np.zeros_like(gt_list_all)
             print("Ground Truth Heading is ", np.unique(gt_list_all[..., 1]*255))
-            gt_list[gt_list_all[..., 1]*255 == heading] = gt_list_all[gt_list_all[..., 1]*255 == heading]
+            gt_list[gt_list_all[..., 1]*255 == heading_dict[heading]] = gt_list_all[gt_list_all[..., 1]*255 == heading_dict[heading]]
             print("GT shape is ", gt_list.shape)
             print("Filtered GT speed is ", np.min(gt_list[..., 0]), np.max(gt_list[..., 0]))
             print("Filtered GT direction is ", np.unique(gt_list[..., 1]))
