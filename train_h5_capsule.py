@@ -344,8 +344,8 @@ def main(argv=None):
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
                 test_ims = test_input_handle.get_test_batch(indicies)
-                gt_list.append(test_ims[:, FLAGS.input_length:, :, :, 1:])
 
+                gt_list.append(test_ims[:, FLAGS.input_length:, :, :, 1:])
                 tem_data = test_ims.copy()
                 heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
@@ -359,8 +359,16 @@ def main(argv=None):
                 speed_on_axis = np.expand_dims(test_ims[:, :, :, :, 1] / np.sqrt(2), axis=-1)
                 test_ims = speed_on_axis * heading_image
 
-                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
+                # mavg filtered results
+                mavg_results_all = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
+                mavg_results = np.zeros_like(mavg_results_all)
+                mavg_results[heading_image[:, FLAGS.input_length:, ...] == heading] = \
+                    mavg_results_all[heading_image[:, FLAGS.input_length:, ...] == heading]
 
+                move_avg.append(mavg_results)
+
+
+                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 img_gen = model.test(test_dat, mask_true, batch_size)
 
                 # concat outputs of different gpus along batch
@@ -368,8 +376,7 @@ def main(argv=None):
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
-                mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
-                move_avg.append(mavg_results)
+
                 img_gen_list = []
                 img_gen_origin_list = []
                 for i in range(FLAGS.seq_length - FLAGS.input_length):
@@ -388,10 +395,10 @@ def main(argv=None):
                     gen_speed_heading = np.stack([val_results_speed, val_results_heading], axis=-1)
                     img_gen_origin_list.append(gen_speed_heading)
 
+                    # Transformation according to moving average direction when mavg speed is small
                     epsilon = 0.2
                     val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
                         mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
-
                     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
                     img_gen_list.append(gx)
 
@@ -421,11 +428,8 @@ def main(argv=None):
             gt_list_all = np.stack(gt_list, axis=0)
             # GT filtered to the direction required
             gt_list = np.zeros_like(gt_list_all)
-            print("Ground Truth Heading is ", np.unique(gt_list_all[..., 1]*255))
-            gt_list[gt_list_all[..., 1]*255 == heading_dict[heading]] = gt_list_all[gt_list_all[..., 1]*255 == heading_dict[heading]]
-            print("GT shape is ", gt_list.shape)
-            print("Filtered GT speed is ", np.min(gt_list[..., 0]), np.max(gt_list[..., 0]))
-            print("Filtered GT direction is ", np.unique(gt_list[..., 1]))
+            gt_list[gt_list_all[..., 1]*255 == heading_dict[heading]] = \
+                gt_list_all[gt_list_all[..., 1]*255 == heading_dict[heading]]
 
             pred_list = np.stack(pred_list, axis=0)
             pred_list_all = np.stack(pred_list_all, axis=0)
@@ -463,6 +467,7 @@ def main(argv=None):
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
+
 
             large_gt_speed = move_avg[..., 1] > 0.5
             direction_mse = masked_mse_np(pred_list[large_gt_speed, 1], gt_list[large_gt_speed, 1], null_val=np.nan)
