@@ -62,16 +62,16 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
         # tem_data = images.copy()
         heading_image = images[:, :, :, :, 2] * 255
         # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
-        heading_image = (heading_image // 85).astype(np.int8) + 1
+        heading_image = tf.cast(heading_image // 85, tf.int32) + 1
         heading_image[images[:, :, :, :, 2] == 0] = 0
         # print("Heading Unique", np.unique(heading_image), flush=True)
         # select the corresponding data
-        heading_selected = np.zeros_like(heading_image, np.int8)
+        heading_selected = tf.zeros_like(heading_image, tf.int8)
         heading_selected[heading_image == i] = i
         heading_image = heading_selected
         heading_image = heading_table[heading_image]
 
-        speed_on_axis = np.expand_dims(images[:, :, :, :, 1] / np.sqrt(2), axis=-1)
+        speed_on_axis = np.expand_dims(images[:, :, :, :, 1] / tf.sqrt(2), axis=-1)
         imss = speed_on_axis * heading_image
 
         gen_images, loss = func(imss, mask_true, num_layers, num_hidden, filter_size,
