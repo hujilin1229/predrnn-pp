@@ -87,6 +87,8 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     gts = tf.math.add_n(gt_images)
     preds = tf.math.add_n(pred_images)
 
+    # reshape back
+    preds = tf.reshape(preds, shape1)
     gt_speed = tf.sqrt(gts[..., 0] ** 2 + gts[..., 1] ** 2)
     gen_speed = tf.sqrt(preds[..., 0] ** 2 + preds[..., 1] ** 2)
 
