@@ -107,30 +107,25 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
             gen_images.append(x_gen)
 
     gen_images = tf.stack(gen_images, axis=1)
-    # [batch_size, seq_length, height, width, channels]
-    # gen_images = tf.transpose(gen_images, [1,0,2,3,4])
-    # loss = tf.nn.l2_loss(gen_images - images[:,1:])
-    zero = tf.constant(0, dtype=tf.float32)
-    # weighted = tf.where(tf.not_equal(images[:,1:], zero), tf.ones_like(gen_images[..., 0]), tf.zeros_like(gen_images[..., 0]))
-    # loss = tf.losses.compute_weighted_loss(loss, weighted)
-    # # add mask to loss to evaluate on valid vectors
-    # compute the speed value
 
     gt_images = images[:, 1:]
+    gt_images = tf.reshape(gt_images, [-1, FLAGS.seq_length -1,
+                                       FLAGS.img_height, FLAGS.img_width,
+                                       FLAGS.patch_size_height*FLAGS.patch_size_width,
+                                       FLAGS.img_channel])
+    gen_images = tf.reshape(gen_images, [-1, FLAGS.seq_length - 1,
+                                         FLAGS.img_height, FLAGS.img_width,
+                                         FLAGS.patch_size_height * FLAGS.patch_size_width,
+                                         FLAGS.img_channel])
     # loss on the magnitude of speed
     gt_speed = tf.sqrt(gt_images[..., 0] ** 2 + gt_images[..., 1] ** 2)
     gen_speed = tf.sqrt(gen_images[..., 0] ** 2 + gen_images[..., 1] ** 2)
-    loss = masked_mse_tf(gen_speed, gt_speed, null_val=0.0)
-    #
-    # loss = masked_mse_tf(preds=gen_speed, labels=gt_speed, null_val=0.0)
-    #
-    # gen_images1 = tf.where(tf.not_equal(gt_images, zero), gen_images, tf.zeros_like(gen_images))
-    # gt_images1 = tf.where(tf.not_equal(gt_images, zero), gt_images, tf.zeros_like(gt_images))
-    #
-    # # loss += tf.nn.l2_loss(gen_images1-gt_images1)
-    # loss += masked_mse_tf(gen_images1, gt_images1, null_val=0.0)
-
-    loss += masked_mse_tf(gen_images, gt_images, null_val=0.0)
+    if FLAGS.loss_nan == 'nan':
+        loss = masked_mse_tf(gen_speed, gt_speed, null_val=np.nan)
+        loss += masked_mse_tf(gen_images, gt_images, null_val=np.nan)
+    else:
+        loss = masked_mse_tf(gen_speed, gt_speed, null_val=0.0)
+        loss += masked_mse_tf(gen_images, gt_images, null_val=0.0)
 
     return [gen_images, loss]
 

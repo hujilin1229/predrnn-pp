@@ -87,14 +87,14 @@ tf.app.flags.DEFINE_integer('patch_size_height', 5,
 tf.app.flags.DEFINE_integer('patch_size_width', 4,
                             'patch size on one dimension.')
 
+tf.app.flags.DEFINE_integer('heading', 1,
+                            'the select heading.')
+
 tf.app.flags.DEFINE_boolean('layer_norm', True,
                             'whether to apply tensor layer norm.')
 # optimization
 tf.app.flags.DEFINE_float('lr', 0.001,
                           'base learning rate.')
-tf.app.flags.DEFINE_float('loss_nan', 'nan',
-                          'loss nan for loss function.')
-
 tf.app.flags.DEFINE_boolean('reverse_input', True,
                             'whether to reverse the input frames while training.')
 tf.app.flags.DEFINE_integer('batch_file', 1,
@@ -190,7 +190,18 @@ class Model(object):
 
 def main(argv=None):
 
-    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + 'L1+L2' + FLAGS.loss_nan
+    # FLAGS.save_dir += FLAGS.dataset_name
+    # FLAGS.gen_frm_dir += FLAGS.dataset_name
+    # if tf.io.gfile.exists(FLAGS.save_dir):
+    #     tf.io.gfile.rmtree(FLAGS.save_dir)
+    # tf.io.gfile.makedirs(FLAGS.save_dir)
+    # if tf.io.gfile.exists(FLAGS.gen_frm_dir):
+    #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
+    # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
+
+    heading_dict = {1: 1, 2:85, 3: 170, 4: 255, 0:0}
+    heading = FLAGS.heading
+    FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + 'L1+L2+VALID' + str(heading)
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
@@ -239,6 +250,12 @@ def main(argv=None):
         # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
         heading_image = (heading_image // 85).astype(np.int8) + 1
         heading_image[tem_data[:, :, :, :, 2] == 0] = 0
+        # print("Heading Unique", np.unique(heading_image), flush=True)
+        # select the corresponding data
+        heading_selected = np.zeros_like(heading_image, np.int8)
+        heading_selected[heading_image == heading] = heading
+        heading_image = heading_selected
+
         heading_image = heading_table[heading_image]
 
         speed_on_axis = np.expand_dims(imss[:, :, :, :, 1] / np.sqrt(2), axis=-1)
@@ -277,16 +294,26 @@ def main(argv=None):
                                                int(FLAGS.img_height),
                                                int(FLAGS.img_width),
                                                int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            cost, _ = model.train(ims, lr, mask_true, batch_size)
+            cost, pred_seq_list = model.train(ims, lr, mask_true, batch_size)
+            pred_seq_list = np.concatenate(pred_seq_list)
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
                 cost2, _ = model.train(ims_rev, lr, mask_true, batch_size)
                 cost = (cost + cost2) / 2
 
+            # cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
+            #                FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
+
+                # print("Predicted Images shape is ", pred_seq_list.shape, flush=True)
+                # print("Ground truth Images Value Range is ", np.min(ims), np.max(ims), flush=True)
+                # print("Ground truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims), flush=True)
+                #
+                # print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list), flush=True)
+                # print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list), flush=True)
 
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
@@ -325,13 +352,22 @@ def main(argv=None):
                 heading_image = test_ims[:, :, :, :, 2] * 255
                 heading_image = (heading_image // 85).astype(np.int8) + 1
                 heading_image[tem_data[:, :, :, :, 2] == 0] = 0
+                cvt_heading = heading_image.copy()
 
-                # # convert the data into speed vectors
+                # convert the data into speed vectors
+                heading_selected = np.zeros_like(heading_image, np.int8)
+                heading_selected[heading_image == heading] = heading
+                heading_image = heading_selected
                 heading_image = heading_table[heading_image]
                 speed_on_axis = np.expand_dims(test_ims[:, :, :, :, 1] / np.sqrt(2), axis=-1)
                 test_ims = speed_on_axis * heading_image
 
-                mavg_results = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
+                # mavg filtered results
+                mavg_results_all = cast_moving_avg(tem_data[:, :FLAGS.input_length, ...])
+                mavg_results = np.zeros_like(mavg_results_all)
+                # heading_image = np.expand_dims(heading_image, axis=-1)
+                mavg_results[cvt_heading[:, FLAGS.input_length:, ...] == heading] = \
+                    mavg_results_all[cvt_heading[:, FLAGS.input_length:, ...] == heading]
                 move_avg.append(mavg_results)
 
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
@@ -393,24 +429,19 @@ def main(argv=None):
                                  FLAGS.img_width * FLAGS.patch_size_height *
                                  FLAGS.patch_size_width * FLAGS.img_channel))
 
-            gt_list = np.stack(gt_list, axis=0)
+            gt_list_all = np.stack(gt_list, axis=0)
             # GT filtered to the direction required
+            gt_list = np.zeros_like(gt_list_all)
+            gt_list[gt_list_all[..., 1]*255 == heading_dict[heading]] = \
+                gt_list_all[gt_list_all[..., 1]*255 == heading_dict[heading]]
 
             pred_list = np.stack(pred_list, axis=0)
             pred_list_all = np.stack(pred_list_all, axis=0)
 
-            print("Evaluate on every pixels, No Transformation....")
-            mse = masked_mse_np(pred_list_all, gt_list, null_val=np.nan)
-            speed_mse = masked_mse_np(pred_list_all[..., 0], gt_list[..., 0], null_val=np.nan)
-            direction_mse = masked_mse_np(pred_list_all[..., 1], gt_list[..., 1], null_val=np.nan)
-            print("The output mse is ", mse)
-            print("The speed mse is ", speed_mse)
-            print("The direction mse is ", direction_mse)
-
-            print("Evaluate on valid pixels for No Transformation...")
-            mse = masked_mse_np(pred_list_all, gt_list, null_val=0.0)
-            speed_mse = masked_mse_np(pred_list_all[..., 0], gt_list[..., 0], null_val=0.0)
-            direction_mse = masked_mse_np(pred_list_all[..., 1], gt_list[..., 1], null_val=0.0)
+            print("Evaluate on every pixels....")
+            mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
+            speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)
@@ -419,6 +450,14 @@ def main(argv=None):
             mse = masked_mse_np(pred_list, gt_list, null_val=0.0)
             speed_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=0.0)
             direction_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=0.0)
+            print("The output mse is ", mse)
+            print("The speed mse is ", speed_mse)
+            print("The direction mse is ", direction_mse)
+
+            print("Evaluate on valid pixels for No Transformation...")
+            mse = masked_mse_np(pred_list_all, gt_list, null_val=0.0)
+            speed_mse = masked_mse_np(pred_list_all[..., 0], gt_list[..., 0], null_val=0.0)
+            direction_mse = masked_mse_np(pred_list_all[..., 1], gt_list[..., 1], null_val=0.0)
             print("The output mse is ", mse)
             print("The speed mse is ", speed_mse)
             print("The direction mse is ", direction_mse)

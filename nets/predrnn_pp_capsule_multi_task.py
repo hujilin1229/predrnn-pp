@@ -108,14 +108,7 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
             gen_images.append(x_gen)
 
     gen_images = tf.stack(gen_images, axis=1)
-    # [batch_size, seq_length, height, width, channels]
-    # gen_images = tf.transpose(gen_images, [1,0,2,3,4])
-    # loss = tf.nn.l2_loss(gen_images - images[:,1:])
-    zero = tf.constant(0, dtype=tf.float32)
-    # weighted = tf.where(tf.not_equal(images[:,1:], zero), tf.ones_like(gen_images[..., 0]), tf.zeros_like(gen_images[..., 0]))
-    # loss = tf.losses.compute_weighted_loss(loss, weighted)
-    # # add mask to loss to evaluate on valid vectors
-    # compute the speed value
+
 
     gt_images = images[:, 1:]
     # loss on the magnitude of speed
