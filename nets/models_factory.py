@@ -1,4 +1,5 @@
 import tensorflow as tf
+FLAGS = tf.app.flags.FLAGS
 import numpy as np
 from nets import predrnn_pp, predrnn_pp_capsule, predrnn_pp_capsule_multi_task
 from nets.predrnn_pp_capsule_multi_task import masked_mse_tf
@@ -88,7 +89,11 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     preds = tf.math.add_n(pred_images)
 
     # reshape back
-    preds = tf.reshape(preds, shape1)
+    preds = tf.reshape(preds, [-1, FLAGS.seq_length -1,
+                               FLAGS.img_height,
+                               FLAGS.img_width,
+                               int(FLAGS.patch_size_height*FLAGS.patch_size_width),
+                               FLAGS.img_channel])
     gt_speed = tf.sqrt(gts[..., 0] ** 2 + gts[..., 1] ** 2)
     gen_speed = tf.sqrt(preds[..., 0] ** 2 + preds[..., 1] ** 2)
 
