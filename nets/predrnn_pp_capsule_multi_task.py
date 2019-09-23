@@ -109,8 +109,16 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
 
     gen_images = tf.stack(gen_images, axis=1)
 
-
     gt_images = images[:, 1:]
+    gt_images = tf.reshape(gt_images, [-1, FLAGS.seq_length - 1,
+                                       FLAGS.img_height, FLAGS.img_width,
+                                       FLAGS.patch_size_height * FLAGS.patch_size_width,
+                                       FLAGS.img_channel])
+    gen_images = tf.reshape(gen_images, [-1, FLAGS.seq_length - 1,
+                                         FLAGS.img_height, FLAGS.img_width,
+                                         FLAGS.patch_size_height * FLAGS.patch_size_width,
+                                         FLAGS.img_channel])
+
     # loss on the magnitude of speed
     gt_speed = tf.sqrt(gt_images[..., 0] ** 2 + gt_images[..., 1] ** 2)
     gen_speed = tf.sqrt(gen_images[..., 0] ** 2 + gen_images[..., 1] ** 2)

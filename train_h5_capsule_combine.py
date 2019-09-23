@@ -190,15 +190,6 @@ class Model(object):
 
 def main(argv=None):
 
-    # FLAGS.save_dir += FLAGS.dataset_name
-    # FLAGS.gen_frm_dir += FLAGS.dataset_name
-    # if tf.io.gfile.exists(FLAGS.save_dir):
-    #     tf.io.gfile.rmtree(FLAGS.save_dir)
-    # tf.io.gfile.makedirs(FLAGS.save_dir)
-    # if tf.io.gfile.exists(FLAGS.gen_frm_dir):
-    #     tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
-    # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
-
     heading_dict = {1: 1, 2:85, 3: 170, 4: 255, 0:0}
     heading = FLAGS.heading
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden + 'squash' + 'L1+L2+VALID' + 'multi-task'
@@ -247,15 +238,8 @@ def main(argv=None):
         # # print("imss shape is ", imss.shape)
         tem_data = imss.copy()
         heading_image = imss[:, :, :, :, 2]*255
-        # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
         heading_image = (heading_image // 85).astype(np.int8) + 1
         heading_image[tem_data[:, :, :, :, 2] == 0] = 0
-        # print("Heading Unique", np.unique(heading_image), flush=True)
-        # select the corresponding data
-        # heading_selected = np.zeros_like(heading_image, np.int8)
-        # heading_selected[heading_image == heading] = heading
-        # heading_image = heading_selected
-
         heading_image = heading_table[heading_image]
 
         speed_on_axis = np.expand_dims(imss[:, :, :, :, 1] / np.sqrt(2), axis=-1)
@@ -295,26 +279,16 @@ def main(argv=None):
                                                int(FLAGS.img_height),
                                                int(FLAGS.img_width),
                                                int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            cost, pred_seq_list = model.train(ims, lr, mask_true, batch_size)
-            pred_seq_list = np.concatenate(pred_seq_list)
+            cost, _ = model.train(ims, lr, mask_true, batch_size)
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
                 cost2, _ = model.train(ims_rev, lr, mask_true, batch_size)
                 cost = (cost + cost2) / 2
 
-            # cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
-            #                FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
-
-                # print("Predicted Images shape is ", pred_seq_list.shape, flush=True)
-                # print("Ground truth Images Value Range is ", np.min(ims), np.max(ims), flush=True)
-                # print("Ground truth Images Value Stats~(mean & std) are ", np.mean(ims), np.std(ims), flush=True)
-                #
-                # print("Predicted Images Value Range is ", np.min(pred_seq_list), np.max(pred_seq_list), flush=True)
-                # print("Predicted Images Value Stats~(mean & std) are ", np.mean(pred_seq_list), np.std(pred_seq_list), flush=True)
 
         train_input_handle.next()
         if itr % FLAGS.test_interval == 0:
@@ -371,10 +345,13 @@ def main(argv=None):
                     mavg_results_all[cvt_heading[:, FLAGS.input_length:, ...] == heading]
                 move_avg.append(mavg_results)
 
-                test_dat = preprocess.reshape_patch(tem_data, FLAGS.patch_size_width, FLAGS.patch_size_height)
+                test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 img_gen = model.test(test_dat, mask_true, batch_size)
                 # concat outputs of different gpus along batch
                 img_gen = np.concatenate(img_gen)
+                # reshape the prediction has ndims=5
+                img_gen = np.reshape(img_gen, (img_gen.shape[0], FLAGS.seq_length - FLAGS.input_length,
+                                               FLAGS.img_height, FLAGS.img_width, -1))
                 img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
                 # print("Image Generates Shape is ", img_gen.shape)
                 # MSE per frame
