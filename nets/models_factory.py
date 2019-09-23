@@ -59,22 +59,9 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     losses = []
     original_shape = images.get_shape()
     shape1 = original_shape.as_list()
-    shape1 = shape1[:-1] + [shape1[-1]//2, 2]
+    shape1 = [-1] + shape1[1:-1] + [shape1[-1]//2, 2]
     images = tf.reshape(images, tf.TensorShape(shape1))
     for i in range(1, 5):
-        # # tem_data = images.copy()
-        # heading_image = images[:, :, :, :, 2] * 255
-        # # print("Heading Unique", np.unique(heading_image), flush=True) #[  0.   1.  85. 170. 255.] output
-        # heading_image = tf.cast(heading_image // 85, tf.int32) + 1
-        # heading_image = tf.where(images[:, :, :, :, 2] == 0, tf.zeros_like(heading_image, tf.int32), heading_image)
-        # # heading_image[images[:, :, :, :, 2] == 0] = 0
-        # # print("Heading Unique", np.unique(heading_image), flush=True)
-        # # select the corresponding data
-        # heading_selected = tf.where(heading_image == i, heading_image, tf.zeros_like(heading_image, tf.int32))
-        # heading_image = tf.nn.embedding_lookup(heading_table, heading_selected)
-        #
-        # speed_on_axis = tf.expand_dims(images[:, :, :, :, 1] / np.sqrt(2), axis=-1)
-        # imss = speed_on_axis * heading_image
         if i == 1:
             imss = tf.where((images[..., 0] < 0) & (images[..., 1] > 0), images, tf.zeros_like(images))
         elif i == 2:
