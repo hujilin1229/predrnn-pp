@@ -37,6 +37,7 @@ def masked_mse_tf(preds, labels, null_val=np.nan):
     mask /= tf.reduce_mean(mask)
     mask = tf.where(tf.is_nan(mask), tf.zeros_like(mask), mask)
     loss = tf.square(tf.subtract(preds, labels))
+
     loss = loss * mask
     loss = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
 
