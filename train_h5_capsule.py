@@ -92,7 +92,7 @@ tf.app.flags.DEFINE_boolean('layer_norm', True,
 # optimization
 tf.app.flags.DEFINE_float('lr', 0.001,
                           'base learning rate.')
-tf.app.flags.DEFINE_float('loss_nan', 'nan',
+tf.app.flags.DEFINE_string('loss_nan', 'nan',
                           'loss nan for loss function.')
 
 tf.app.flags.DEFINE_boolean('reverse_input', True,
@@ -364,7 +364,6 @@ def main(argv=None):
                     img_gen_origin_list.append(gen_speed_heading)
 
                     # Transformation according to moving average direction when mavg speed is small
-
                     val_results_heading[mavg_results[:, i, :, :, 1] < epsilon] = \
                         mavg_results[:, i, :, :, 2][mavg_results[:, i, :, :, 1] < epsilon]
                     gx = np.stack([val_results_speed, val_results_heading], axis=-1)
