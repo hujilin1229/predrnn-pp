@@ -60,16 +60,16 @@ def construct_multi_task_model(name, images, mask_true, num_layers, num_hidden,
     original_shape = images.get_shape()
     shape1 = original_shape.as_list()
     shape1 = [-1] + shape1[1:-1] + [shape1[-1]//2, 2]
-    images = tf.reshape(images, shape1)
+    images_dim2 = tf.reshape(images, shape1)
     for i in range(1, 5):
         if i == 1:
-            imss = tf.where((images[..., 0] < 0) & (images[..., 1] > 0), images, tf.zeros_like(images))
+            imss = tf.where((images_dim2[..., 0] < 0) & (images_dim2[..., 1] > 0), images_dim2, tf.zeros_like(images_dim2))
         elif i == 2:
-            imss = tf.where((images[..., 0] > 0) & (images[..., 1] > 0), images, tf.zeros_like(images))
+            imss = tf.where((images_dim2[..., 0] > 0) & (images_dim2[..., 1] > 0), images_dim2, tf.zeros_like(images_dim2))
         elif i == 3:
-            imss = tf.where((images[..., 0] < 0) & (images[..., 1] < 0), images, tf.zeros_like(images))
+            imss = tf.where((images_dim2[..., 0] < 0) & (images_dim2[..., 1] < 0), images_dim2, tf.zeros_like(images_dim2))
         else:
-            imss = tf.where((images[..., 0] > 0) & (images[..., 1] < 0), images, tf.zeros_like(images))
+            imss = tf.where((images_dim2[..., 0] > 0) & (images_dim2[..., 1] < 0), images_dim2, tf.zeros_like(images_dim2))
 
         gt_images.append(imss[:, 1:, ...])
 
