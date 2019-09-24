@@ -197,16 +197,9 @@ def main(argv=None):
     # FLAGS.save_dir += FLAGS.dataset_name
     FLAGS.pretrained_model = FLAGS.save_dir
 
-    # FLAGS.save_dir += FLAGS.dataset_name
-    # FLAGS.gen_frm_dir += FLAGS.dataset_name
-    # if not tf.io.gfile.exists(FLAGS.save_dir):
-    #     # tf.io.gfile.rmtree(FLAGS.save_dir)
-    #     tf.io.gfile.makedirs(FLAGS.save_dir)
-    # else:
-    #     FLAGS.pretrained_model = FLAGS.save_dir
-    # if not tf.io.gfile.exists(FLAGS.gen_frm_dir):
-    #     # tf.io.gfile.rmtree(FLAGS.gen_frm_dir)
-    #     tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
+    process_data_dir = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, 'process_0.5')
+    node_pos_file_2in1 = os.path.join(process_data_dir, 'node_pos_0.5.npy')
+    node_pos = np.load(node_pos_file_2in1)
 
     test_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_' + FLAGS.mode)
     sub_files = preprocess.list_filenames(test_data_paths, [])
@@ -269,6 +262,7 @@ def main(argv=None):
             outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
             preprocess.write_data(img_gen, outfile)
 
+
     mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
 
     mse1 = se_1 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
@@ -285,6 +279,20 @@ def main(argv=None):
     array_mse = masked_mse_np(pred_list, gt_list, np.nan)
     print("Array Shape: ", array_mse.shape)
     print("Array MSE: ", array_mse)
+
+    # Evaluate on nodes
+    # Check MSE on node_pos
+    img_gt_node = gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :].astype(np.float32)
+    img_gen_node = pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :].astype(np.float32)
+    mse_node_all = masked_mse_np(img_gen_node, img_gt_node, np.nan)
+    mse_node_volume = masked_mse_np(img_gen_node[..., 0], img_gt_node[..., 0], np.nan)
+    mse_node_speed = masked_mse_np(img_gen_node[..., 1], img_gt_node[..., 1], np.nan)
+    mse_node_direction = masked_mse_np(img_gen_node[..., 2], img_gt_node[..., 2], np.nan)
+    print("Results on Node Pos: ")
+    print("MSE: ", mse_node_all)
+    print("Volume mse: ", mse_node_volume)
+    print("Speed mse: ", mse_node_speed)
+    print("Direction mse: ", mse_node_direction)
 
     print("Finished...")
 
