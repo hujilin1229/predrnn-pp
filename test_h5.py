@@ -233,7 +233,7 @@ def main(argv=None):
             # data = np.stack(data, axis=0)
             # type casting
 
-            data = data.reshape(-1, FLAGS.input_length+FLAGS.seq_length,
+            data = data.reshape(-1, FLAGS.seq_length,
                                 FLAGS.img_height*FLAGS.patch_size_height, FLAGS.img_width*FLAGS.patch_size_width, 3)
 
             test_dat = data.astype(np.float32) / 255.0
