@@ -229,13 +229,16 @@ def main(argv=None):
         with h5py.File(os.path.join(test_data_paths, f), 'r') as h5_file:
             data = h5_file['array'][()]
             # get relevant training data pieces
-            data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
-            data = np.stack(data, axis=0)
+            # data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
+            # data = np.stack(data, axis=0)
             # type casting
+
+            data = data.reshape(-1, FLAGS.input_length+FLAGS.seq_length,
+                                FLAGS.img_height*FLAGS.patch_size_height, FLAGS.img_width*FLAGS.patch_size_width, 3)
 
             test_dat = data.astype(np.float32) / 255.0
             test_dat = preprocess.reshape_patch(test_dat, FLAGS.patch_size_width, FLAGS.patch_size_height)
-            batch_size = len(indicies)
+            batch_size = data.shape[0]
             mask_true = np.zeros((batch_size,
                                   FLAGS.seq_length-FLAGS.input_length-1,
                                   FLAGS.img_height,

@@ -284,8 +284,6 @@ def main(argv=None):
             capsule_combine_list.append(capsule_combine)
 
 
-
-
     gt_list = np.stack(gt_list, axis=0)
     capsule_combine_list = np.stack(capsule_combine_list, axis=0)
     mavg_list = np.stack(mavg_list, axis=0)
