@@ -5,6 +5,7 @@ import os
 import datetime
 import re
 import h5py
+from pathlib import Path
 
 def reshape_patch(img_tensor, patch_size_width, patch_size_height=None):
     if patch_size_height is None:
@@ -99,3 +100,28 @@ def create_directory_structure(root):
     except OSError:
         print("failed to create directory structure")
         # sys.exit(2)
+
+def construct_road_network_from_grid_condense(
+        row_patch, col_patch, file_dir, least_ratio=0.033):
+
+    print("1. Query a nodes from the validation data folder ")
+    # Search for all h5 files
+    p = Path(file_dir)
+    assert (p.is_dir())
+    files = p.glob('*.h5')
+    data_all = []
+    for h5dataset_fp in files:
+        file_path = str(h5dataset_fp.resolve())
+        with h5py.File(file_path, 'r') as f:
+            data = f['array'][()]
+            data_all.append(data)
+    data_all = np.stack(data_all, axis=0)
+    batch, timeslots, rows, cols, num_channels = data_all.shape
+    data_patch = np.reshape(data_all, (batch, timeslots, rows//row_patch, row_patch,
+                                       cols//col_patch, col_patch, num_channels))
+    non_zeros = np.sum(data_patch > 0, axis=(0, 1, 3, 5, 6))
+    total_num_counts = batch * timeslots * row_patch * col_patch * num_channels
+    non_zeros_x, non_zeros_y = np.nonzero(non_zeros > total_num_counts * least_ratio)
+    node_pos = np.stack([non_zeros_x, non_zeros_y], axis=1)
+
+    return node_pos

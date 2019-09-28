@@ -297,7 +297,40 @@ def main(argv=None):
     print("Speed mse: ", mse_node_speed)
     print("Direction mse: ", mse_node_direction)
 
+    print("Evaluating on Condensed Graph....")
+    seq_length = np.shape(gt_list)[2]
+    img_height = np.shape(gt_list)[3]
+    img_width = np.shape(gt_list)[4]
+    num_channels = np.shape(gt_list)[5]
+    gt_list = np.reshape(gt_list, [-1, seq_length,
+                                int(img_height / FLAGS.patch_size_height), FLAGS.patch_size_height,
+                                int(img_width / FLAGS.patch_size_width), FLAGS.patch_size_width,
+                                num_channels])
+    gt_list = np.transpose(gt_list, [0, 1, 2, 4, 3, 5, 6])
+
+    pred_list = np.reshape(pred_list, [-1, seq_length,
+                                   int(img_height / FLAGS.patch_size_height), FLAGS.patch_size_height,
+                                   int(img_width / FLAGS.patch_size_width), FLAGS.patch_size_width,
+                                   num_channels])
+    pred_list = np.transpose(pred_list, [0, 1, 2, 4, 3, 5, 6])
+
+    node_pos = preprocess.construct_road_network_from_grid_condense(FLAGS.patch_size_height, FLAGS.patch_size_width,
+                                                                    test_data_paths)
+
+    img_gt_node = gt_list[:, :, node_pos[:, 0], node_pos[:, 1], ...].astype(np.float32)
+    img_gen_node = pred_list[:, :, node_pos[:, 0], node_pos[:, 1], ...].astype(np.float32)
+    mse_node_all = masked_mse_np(img_gen_node, img_gt_node, np.nan)
+    mse_node_volume = masked_mse_np(img_gen_node[..., 0], img_gt_node[..., 0], np.nan)
+    mse_node_speed = masked_mse_np(img_gen_node[..., 1], img_gt_node[..., 1], np.nan)
+    mse_node_direction = masked_mse_np(img_gen_node[..., 2], img_gt_node[..., 2], np.nan)
+    print("MSE: ", mse_node_all)
+    print("Volume mse: ", mse_node_volume)
+    print("Speed mse: ", mse_node_speed)
+    print("Direction mse: ", mse_node_direction)
+
     print("Finished...")
+
+
 
 if __name__ == '__main__':
     tf.app.run()
