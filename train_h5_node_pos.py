@@ -212,7 +212,6 @@ def main(argv=None):
     binary_images[node_pos[:, 0], node_pos[:, 1]] = 1.0
     binary_images = np.expand_dims(binary_images, axis=-1)
     binary_images = np.concatenate([binary_images] * FLAGS.img_channel, axis=-1)
-    binary_images = preprocess.reshape_patch(binary_images, FLAGS.patch_size_width, FLAGS.patch_size_height)
     binary_images = np.expand_dims(binary_images, axis=0)
 
     train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_training')
@@ -283,15 +282,15 @@ def main(argv=None):
             mask_loss = np.concatenate([binary_images] * (FLAGS.seq_length-1) * batch_size, axis=0)
             mask_loss = np.reshape(mask_loss, (batch_size,
                                                FLAGS.seq_length - 1,
-                                               int(FLAGS.img_height),
-                                               int(FLAGS.img_width),
-                                               int(
-                                                   FLAGS.patch_size_height * FLAGS.patch_size_width * FLAGS.img_channel)))
+                                               int(FLAGS.img_height * FLAGS.patch_size_height),
+                                               int(FLAGS.img_width * FLAGS.patch_size_width),
+                                               FLAGS.img_channel))
+            binary_images = preprocess.reshape_patch(binary_images, FLAGS.patch_size_width, FLAGS.patch_size_height)
             cost = model.train(ims, lr, mask_true, batch_size, mask_loss)
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
-                cost += model.train(ims_rev, lr, mask_true, batch_size)
+                cost += model.train(ims_rev, lr, mask_true, batch_size, mask_loss)
                 cost = cost/2
 
             cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
