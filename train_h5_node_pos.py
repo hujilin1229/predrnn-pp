@@ -35,9 +35,9 @@ tf.app.flags.DEFINE_string('train_data_paths',
 tf.app.flags.DEFINE_string('valid_data_paths',
                            './data/', # 'data/moving-mnist-example/moving-mnist-valid.npz',
                            'validation data paths.')
-tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp_nodepos',
+tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp',
                             'dir to store trained net.')
-tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp_nodepos',
+tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp',
                            'dir to store result.')
 # model
 tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_nodepos',
@@ -194,7 +194,7 @@ def main(argv=None):
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
-    FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
+    FLAGS.best_model = FLAGS.save_dir + '/best_node_pos.ckpt'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
