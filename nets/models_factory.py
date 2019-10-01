@@ -7,7 +7,7 @@ from nets.predrnn_pp_capsule_multi_task import masked_mse_tf
 networks_map = {'predrnn_pp': predrnn_pp.rnn,
                 'predrnn_pp_capsule': predrnn_pp_capsule.rnn,
                 'predrnn_pp_capsule_multitask': predrnn_pp_capsule_multi_task.rnn,
-                'predrnn_pp_nodepos': predrnn_pp_nodepos
+                'predrnn_pp_nodepos': predrnn_pp_nodepos.rnn
                }
 
 def construct_model(name, images, mask_true, num_layers, num_hidden,
