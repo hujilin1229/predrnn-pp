@@ -35,9 +35,9 @@ tf.app.flags.DEFINE_string('train_data_paths',
 tf.app.flags.DEFINE_string('valid_data_paths',
                            './data/', # 'data/moving-mnist-example/moving-mnist-valid.npz',
                            'validation data paths.')
-tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp',
+tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp_nodepos',
                             'dir to store trained net.')
-tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp',
+tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp_nodepos',
                            'dir to store result.')
 # model
 tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_nodepos',
