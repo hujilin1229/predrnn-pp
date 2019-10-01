@@ -285,7 +285,7 @@ def main(argv=None):
                                                int(FLAGS.img_height * FLAGS.patch_size_height),
                                                int(FLAGS.img_width * FLAGS.patch_size_width),
                                                FLAGS.img_channel))
-            binary_images = preprocess.reshape_patch(binary_images, FLAGS.patch_size_width, FLAGS.patch_size_height)
+            mask_loss = preprocess.reshape_patch(mask_loss, FLAGS.patch_size_width, FLAGS.patch_size_height)
             cost = model.train(ims, lr, mask_true, batch_size, mask_loss)
 
             if FLAGS.reverse_input:
