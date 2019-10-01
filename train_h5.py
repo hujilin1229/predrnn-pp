@@ -216,7 +216,7 @@ def main(argv=None):
     model = Model()
     lr = FLAGS.lr
 
-    delta = 0.00002
+    delta = 0.2
     base = 0.99998
     eta = 1
     min_val_loss = 1.0
@@ -232,7 +232,7 @@ def main(argv=None):
             FLAGS.img_height = ims.shape[2]
             FLAGS.img_width = ims.shape[3]
             batch_size = ims.shape[0]
-            if itr < 50000:
+            if itr < 10:
                 eta -= delta
             else:
                 eta = 0.0
@@ -350,50 +350,6 @@ def main(argv=None):
                 min_val_loss = mse
                 print("Current Min Val Loss is ", min_val_loss)
                 model.save_to_best_mode()
-            # print("Indices: ", indicies, flush=True)
-            # print("Output shape is ", pred_list.shape, flush=True)
-
-            # gt_list2 = []
-            # se_total = 0.
-            # sub_files = preprocess.list_filenames(valid_data_paths, [])
-            # sub_files = sorted(sub_files)
-            # valid_data_files = test_input_handle.get_data_files()
-            # print("valid data files: ")
-            # print(valid_data_files)
-            # print("sub files: ")
-            # print(sub_files)
-            #
-            # for f in sub_files:
-            #     with h5py.File(os.path.join(valid_data_paths, f), 'r') as h5_file:
-            #         data = h5_file['array'][()]
-            #         # get relevant training data pieces
-            #         data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
-            #         data = np.stack(data, axis=0)
-            #         # type casting
-            #
-            #         test_dat = data.astype(np.float32) / 255.0
-            #         test_dat = preprocess.reshape_patch(test_dat, FLAGS.patch_size_width, FLAGS.patch_size_height)
-            #         batch_size = len(indicies)
-            #         mask_true = np.zeros((batch_size,
-            #                               FLAGS.seq_length - FLAGS.input_length - 1,
-            #                               FLAGS.img_height,
-            #                               FLAGS.img_width,
-            #                               FLAGS.patch_size_height * FLAGS.patch_size_width * FLAGS.img_channel))
-            #         img_gen = model.test(test_dat, mask_true, batch_size)
-            #         # concat outputs of different gpus along batch
-            #         img_gen = np.concatenate(img_gen)
-            #         img_gen = np.maximum(img_gen, 0)
-            #         img_gen = np.minimum(img_gen, 1)
-            #         img_gen = preprocess.reshape_patch_back(img_gen, FLAGS.patch_size_width, FLAGS.patch_size_height)
-            #         img_gt = data[:, FLAGS.input_length:, ...].astype(np.float32) / 255.0
-            #         gt_list2.append(img_gt)
-            #         se_total += np.sum((img_gt - img_gen) ** 2)
-            # mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
-            # print("MSE: ", mse, flush=True)
-            # gt_list2 = np.stack(gt_list2, axis=0)
-            # # print("gt_list1: ", gt_list, flush=True)
-            # # print("gt_list2: ", gt_list2, flush=True)
-            # print("differences: ", np.sum(gt_list2 - gt_list, axis=(2, 3, 4)), flush=True)
 
 
         if itr % FLAGS.snapshot_interval == 0:
