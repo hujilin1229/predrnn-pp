@@ -3,7 +3,7 @@ __author__ = 'yunbo'
 import tensorflow as tf
 from layers.GradientHighwayUnit import GHU as ghu
 from layers.CausalLSTMCell import CausalLSTMCell as cslstm
-FLAGS = tf.app.flags.FLAGS
+
 
 def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
         seq_length=20, input_length=10, tln=True, batch_size=None):
@@ -63,7 +63,9 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     gen_images = tf.stack(gen_images)
     # [batch_size, seq_length, height, width, channels]
     gen_images = tf.transpose(gen_images, [1,0,2,3,4])
-    loss = tf.nn.l2_loss(gen_images - images[:,1:])
+
+    loss = (gen_images - images[:, 1:]) ** 2
+    # loss = tf.nn.l2_loss(gen_images - images[:,1:])
     #loss += tf.reduce_sum(tf.abs(gen_images - images[:,1:]))
     return [gen_images, loss]
 

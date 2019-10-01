@@ -40,7 +40,7 @@ tf.app.flags.DEFINE_string('save_dir', 'checkpoints/predrnn_pp',
 tf.app.flags.DEFINE_string('gen_frm_dir', 'results/predrnn_pp',
                            'dir to store result.')
 # model
-tf.app.flags.DEFINE_string('model_name', 'predrnn_pp',
+tf.app.flags.DEFINE_string('model_name', 'predrnn_pp_nodepos',
                            'The name of the architecture.')
 tf.app.flags.DEFINE_string('pretrained_model', '',
                            'file of a pretrained model to initialize from.')
@@ -102,6 +102,14 @@ class Model(object):
                                          FLAGS.img_height,
                                          FLAGS.img_width,
                                          int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)])
+
+        self.mask_loss = tf.placeholder(tf.float32,
+                                        [None,
+                                         FLAGS.seq_length - 1,
+                                         FLAGS.img_height,
+                                         FLAGS.img_width,
+                                         int(FLAGS.patch_size_height * FLAGS.patch_size_width * FLAGS.img_channel)])
+
         self.batchsize = tf.placeholder(tf.int32, [], name='batchsize')
 
         grads = []
@@ -123,10 +131,10 @@ class Model(object):
             gen_ims = output_list[0]
             loss = output_list[1]
             pred_ims = gen_ims[:,FLAGS.input_length-1:]
-            self.loss_train = loss
 
-            # make a weighted loss
-
+            # make the loss weighted here
+            loss = loss * self.mask_loss
+            self.loss_train = tf.reduce_mean(loss)
             # gradients
             all_params = tf.trainable_variables()
             grads.append(tf.gradients(loss, all_params))
@@ -149,11 +157,12 @@ class Model(object):
             except:
                 pass
 
-    def train(self, inputs, lr, mask_true, batch_size):
+    def train(self, inputs, lr, mask_true, batch_size, mask_loss):
         feed_dict = {self.x: inputs}
         feed_dict.update({self.tf_lr: lr})
         feed_dict.update({self.mask_true: mask_true})
         feed_dict.update({self.batchsize: batch_size})
+        feed_dict.update({self.mask_loss: mask_loss})
         loss, _ = self.sess.run((self.loss_train, self.train_op), feed_dict)
         return loss
 
@@ -199,6 +208,12 @@ def main(argv=None):
     process_data_dir = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, 'process_0.5')
     node_pos_file_2in1 = os.path.join(process_data_dir, 'node_pos_0.5.npy')
     node_pos = np.load(node_pos_file_2in1)
+    binary_images = np.zeros((FLAGS.img_height*FLAGS.patch_size_height, FLAGS.img_width*FLAGS.patch_size_width))
+    binary_images[node_pos[:, 0], node_pos[:, 1]] = 1.0
+    binary_images = np.expand_dims(binary_images, axis=-1)
+    binary_images = np.concatenate([binary_images] * FLAGS.img_channel, axis=-1)
+    binary_images = preprocess.reshape_patch(binary_images, FLAGS.patch_size_width, FLAGS.patch_size_height)
+    binary_images = np.expand_dims(binary_images, axis=0)
 
     train_data_paths = os.path.join(FLAGS.train_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_training')
     valid_data_paths = os.path.join(FLAGS.valid_data_paths, FLAGS.dataset_name, FLAGS.dataset_name + '_validation')
@@ -264,7 +279,15 @@ def main(argv=None):
                                                int(FLAGS.img_height),
                                                int(FLAGS.img_width),
                                                int(FLAGS.patch_size_height*FLAGS.patch_size_width*FLAGS.img_channel)))
-            cost = model.train(ims, lr, mask_true, batch_size)
+
+            mask_loss = np.concatenate([binary_images] * (FLAGS.seq_length-1) * batch_size, axis=0)
+            mask_loss = np.reshape(mask_loss, (batch_size,
+                                               FLAGS.seq_length - 1,
+                                               int(FLAGS.img_height),
+                                               int(FLAGS.img_width),
+                                               int(
+                                                   FLAGS.patch_size_height * FLAGS.patch_size_width * FLAGS.img_channel)))
+            cost = model.train(ims, lr, mask_true, batch_size, mask_loss)
 
             if FLAGS.reverse_input:
                 ims_rev = ims[:,::-1]
@@ -332,6 +355,7 @@ def main(argv=None):
 
                 test_input_handle.next()
 
+            print("-----------------------------------------------------------------------------")
             avg_mse = avg_mse / (batch_id*batch_size*FLAGS.img_height *
                                  FLAGS.img_width * FLAGS.patch_size_height *
                                  FLAGS.patch_size_width * FLAGS.img_channel * len(img_mse))
@@ -347,6 +371,20 @@ def main(argv=None):
             volume_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
             speed_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
             direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
+            print("The output mse is ", mse, flush=True)
+            print("The volume mse is ", volume_mse, flush=True)
+            print("The speed mse is ", speed_mse, flush=True)
+            print("The direction mse is ", direction_mse, flush=True)
+
+            print("Evaluation on Node Pos: ")
+            mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], :],
+                                gt_list[:, :, node_pos[:, 0], node_pos[:, 1], :], null_val=np.nan)
+            volume_mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], 0],
+                                       gt_list[:, :, node_pos[:, 0], node_pos[:, 1], 0], null_val=np.nan)
+            speed_mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], 1],
+                                      gt_list[:, :, node_pos[:, 0], node_pos[:, 1], 1], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], 2],
+                                          gt_list[:, :, node_pos[:, 0], node_pos[:, 1], 2], null_val=np.nan)
             print("The output mse is ", mse, flush=True)
             print("The volume mse is ", volume_mse, flush=True)
             print("The speed mse is ", speed_mse, flush=True)
