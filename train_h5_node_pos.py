@@ -134,7 +134,7 @@ class Model(object):
 
             # make the loss weighted here
             loss = loss * self.mask_loss
-            self.loss_train = tf.reduce_mean(loss)
+            self.loss_train = tf.reduce_sum(loss) / tf.reduce_sum(self.mask_loss)
             # gradients
             all_params = tf.trainable_variables()
             grads.append(tf.gradients(loss, all_params))
@@ -377,14 +377,14 @@ def main(argv=None):
 
             print("pred shape is ", pred_list.shape)
             print("Evaluation on Node Pos: ")
-            mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], :],
-                                gt_list[:, :, node_pos[:, 0], node_pos[:, 1], :], null_val=np.nan)
-            volume_mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], 0],
-                                       gt_list[:, :, node_pos[:, 0], node_pos[:, 1], 0], null_val=np.nan)
-            speed_mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], 1],
-                                      gt_list[:, :, node_pos[:, 0], node_pos[:, 1], 1], null_val=np.nan)
-            direction_mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], 2],
-                                          gt_list[:, :, node_pos[:, 0], node_pos[:, 1], 2], null_val=np.nan)
+            mse = masked_mse_np(pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :],
+                                gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :], null_val=np.nan)
+            volume_mse = masked_mse_np(pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], 0],
+                                       gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], 0], null_val=np.nan)
+            speed_mse = masked_mse_np(pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], 1],
+                                      gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], 1], null_val=np.nan)
+            direction_mse = masked_mse_np(pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], 2],
+                                          gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], 2], null_val=np.nan)
             print("The output mse is ", mse, flush=True)
             print("The volume mse is ", volume_mse, flush=True)
             print("The speed mse is ", speed_mse, flush=True)
