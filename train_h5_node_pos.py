@@ -375,6 +375,7 @@ def main(argv=None):
             print("The speed mse is ", speed_mse, flush=True)
             print("The direction mse is ", direction_mse, flush=True)
 
+            print("pred shape is ", pred_list.shape)
             print("Evaluation on Node Pos: ")
             mse = masked_mse_np(pred_list[:, :, node_pos[:, 0], node_pos[:, 1], :],
                                 gt_list[:, :, node_pos[:, 0], node_pos[:, 1], :], null_val=np.nan)
