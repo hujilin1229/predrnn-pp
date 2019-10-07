@@ -134,7 +134,8 @@ class Model(object):
 
             # make the loss weighted here
             loss = loss * self.mask_loss
-            self.loss_train = tf.reduce_sum(loss) / tf.reduce_sum(self.mask_loss)
+            loss = tf.reduce_sum(loss) / tf.reduce_sum(self.mask_loss)
+            self.loss_train = loss
             # gradients
             all_params = tf.trainable_variables()
             grads.append(tf.gradients(loss, all_params))
