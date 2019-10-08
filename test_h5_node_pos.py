@@ -5,9 +5,7 @@ import os.path
 import numpy as np
 import tensorflow as tf
 from nets import models_factory
-from data_provider import datasets_factory
 from utils import preprocess
-from utils import metrics
 import h5py
 
 def masked_mse_np(preds, labels, null_val=np.nan):
