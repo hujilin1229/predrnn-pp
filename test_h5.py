@@ -23,25 +23,34 @@ def masked_mse_np(preds, labels, null_val=np.nan):
 
         return np.sum(rmse) / np.sum(mask)
 
+
 def cast_moving_avg(data):
     """
     Returns cast moving average (cast to np.uint8)
     data = tensor of shape (5, step, 495, 436, 3) of  type float32
     Return: tensor of shape (5, 3, 495, 436, 3) of type uint8
     """
-
     prediction = []
     for i in range(3):
         data_slice = data[:, i:]
         # print(i, data_slice.shape)
-        # sol 1.
-        t = np.mean(data_slice, axis = 1)
+        # sol 1. only avg_mean without considering empty slots: looks okay with mse: 4114
+        t = np.mean(data_slice, axis=1)
+
+        # # sol 4. consider future average: performance little lift: mse: 3059.7886
+        data_slice_future = []
+        for j in range(4):
+            data_slice_future.append(np.concatenate([data_slice[j, ...], data_slice[j + 1, ...]], axis=0))
+        data_slice_future.append(np.concatenate([data_slice[4, ...], data_slice[4, ...]], axis=0))
+        data_slice_future = np.stack(data_slice_future, axis=0)
+        t = np.mean(data_slice_future, axis=1)
+
         # Return the normal operation
         t = np.expand_dims(t, axis=1)
         prediction.append(t)
-        data = np.concatenate([data, t], axis =1)
+        data = np.concatenate([data, t], axis=1)
 
-    prediction = np.concatenate(prediction, axis = 1)
+    prediction = np.concatenate(prediction, axis=1)
     prediction = np.around(prediction)
     prediction = prediction.astype(np.uint8)
 
