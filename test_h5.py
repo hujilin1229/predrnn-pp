@@ -23,6 +23,30 @@ def masked_mse_np(preds, labels, null_val=np.nan):
 
         return np.sum(rmse) / np.sum(mask)
 
+def cast_moving_avg(data):
+    """
+    Returns cast moving average (cast to np.uint8)
+    data = tensor of shape (5, step, 495, 436, 3) of  type float32
+    Return: tensor of shape (5, 3, 495, 436, 3) of type uint8
+    """
+
+    prediction = []
+    for i in range(3):
+        data_slice = data[:, i:]
+        # print(i, data_slice.shape)
+        # sol 1.
+        t = np.mean(data_slice, axis = 1)
+        # Return the normal operation
+        t = np.expand_dims(t, axis=1)
+        prediction.append(t)
+        data = np.concatenate([data, t], axis =1)
+
+    prediction = np.concatenate(prediction, axis = 1)
+    prediction = np.around(prediction)
+    prediction = prediction.astype(np.uint8)
+
+    return prediction
+
 # -----------------------------------------------------------------------------
 FLAGS = tf.app.flags.FLAGS
 
@@ -219,15 +243,25 @@ def main(argv=None):
     print("Initializing models", flush=True)
     model = Model()
 
+    step = 6
     se_total = 0.
     se_1 = 0.
     se_2 = 0.
     se_3 = 0.
     gt_list = []
     pred_list = []
+    mavg_list = []
     for f in sub_files:
         with h5py.File(os.path.join(test_data_paths, f), 'r') as h5_file:
             data = h5_file['array'][()]
+            # Query the Moving Average Data
+            prev_data = [data[y - step:y] for y in indicies]
+            prev_data = np.stack(prev_data, axis=0)
+            # type casting
+            prev_data = prev_data.astype(np.float32) / 255.0
+            mavg_pred = cast_moving_avg(prev_data)
+            mavg_list.append(mavg_pred)
+
             # get relevant training data pieces
             data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
             data = np.stack(data, axis=0)
@@ -279,9 +313,17 @@ def main(argv=None):
 
     pred_list = np.stack(pred_list, axis=0)
     gt_list = np.stack(gt_list, axis=0)
-    array_mse = masked_mse_np(pred_list, gt_list, np.nan)
-    print("Array Shape: ", array_mse.shape)
-    print("Array MSE: ", array_mse)
+    mavg_list = np.stack(mavg_list, axis=0)
+
+    array_mse = masked_mse_np(mavg_list, gt_list, np.nan)
+    print(f'MAVG {step} MSE: ', array_mse)
+
+    # adapt pred on non_zero mavg pred only
+    pred_list_copy = np.zeros_like(pred_list)
+    pred_list_copy[mavg_list > 0] = pred_list[mavg_list > 0]
+
+    array_mse = masked_mse_np(pred_list_copy, gt_list, np.nan)
+    print(f'PRED+MAVG {step} MSE: ', array_mse)
 
     # Evaluate on nodes
     # Check MSE on node_pos
