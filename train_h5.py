@@ -81,7 +81,7 @@ tf.app.flags.DEFINE_integer('max_iterations', 28500,
                             'max num of steps.')
 tf.app.flags.DEFINE_integer('display_interval', 10,
                             'number of iters showing training loss.')
-tf.app.flags.DEFINE_integer('test_interval', 10,
+tf.app.flags.DEFINE_integer('test_interval', 100,
                             'number of iters for test.')
 tf.app.flags.DEFINE_integer('snapshot_interval', 100,
                             'number of iters saving models.')
@@ -185,7 +185,7 @@ def main(argv=None):
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
-    FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
+    FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}.ckpt'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
@@ -231,6 +231,8 @@ def main(argv=None):
         if train_input_handle.no_batch_left():
             train_input_handle.begin(do_shuffle=True)
         imss = train_input_handle.get_batch()
+        imss = imss[..., :FLAGS.img_channel]
+
         imss = preprocess.reshape_patch(imss, FLAGS.patch_size_width, FLAGS.patch_size_height)
         num_batches = imss.shape[0]
         for bi in range(0, num_batches, FLAGS.batch_size):
@@ -305,6 +307,8 @@ def main(argv=None):
             while(test_input_handle.no_batch_left() == False):
                 batch_id = batch_id + 1
                 test_ims = test_input_handle.get_test_batch(indicies)
+                # get the selected channels
+                test_ims = test_ims[..., :FLAGS.img_channel]
 
                 gt_list.append(test_ims[:, FLAGS.input_length:, :, :, :])
                 test_dat = preprocess.reshape_patch(test_ims, FLAGS.patch_size_width, FLAGS.patch_size_height)
@@ -346,17 +350,18 @@ def main(argv=None):
             mse = masked_mse_np(pred_list, gt_list, null_val=np.nan)
             volume_mse = masked_mse_np(pred_list[..., 0], gt_list[..., 0], null_val=np.nan)
             speed_mse = masked_mse_np(pred_list[..., 1], gt_list[..., 1], null_val=np.nan)
-            direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
+
             print("The output mse is ", mse, flush=True)
             print("The volume mse is ", volume_mse, flush=True)
             print("The speed mse is ", speed_mse, flush=True)
-            print("The direction mse is ", direction_mse, flush=True)
+            if FLAGS.img_channel == 3:
+                direction_mse = masked_mse_np(pred_list[..., 2], gt_list[..., 2], null_val=np.nan)
+                print("The direction mse is ", direction_mse, flush=True)
 
             if min_val_loss > mse:
                 min_val_loss = mse
                 print("Current Min Val Loss is ", min_val_loss)
                 model.save_to_best_mode()
-
 
         if itr % FLAGS.snapshot_interval == 0:
             model.save(itr)
