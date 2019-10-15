@@ -226,7 +226,9 @@ def main(argv=None):
 
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
     print(FLAGS.save_dir)
-    FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
+    # FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
+    FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}.ckpt'
+    # FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}_weighted.ckpt'
     # FLAGS.save_dir += FLAGS.dataset_name
     FLAGS.pretrained_model = FLAGS.save_dir
 
@@ -267,13 +269,15 @@ def main(argv=None):
             prev_data = [data[y - step:y] for y in indicies]
             prev_data = np.stack(prev_data, axis=0)
             # type casting
-            prev_data = prev_data.astype(np.float32) / 255.0
-            mavg_pred = cast_moving_avg(prev_data)
-            mavg_list.append(mavg_pred)
+            # prev_data = prev_data.astype(np.float32) / 255.0
+            # mavg_pred = cast_moving_avg(prev_data)
+            # mavg_list.append(mavg_pred)
 
             # get relevant training data pieces
             data = [data[y - FLAGS.input_length:y + FLAGS.seq_length - FLAGS.input_length] for y in indicies]
             data = np.stack(data, axis=0)
+            # select the data channel as wished
+            data = data[..., :FLAGS.img_channel]
 
             # all validation data is applied
             # data = np.reshape(data,(-1, FLAGS.seq_length,
@@ -302,82 +306,82 @@ def main(argv=None):
 
             se_1 += np.sum((img_gt[..., 0] - img_gen[..., 0]) ** 2)
             se_2 += np.sum((img_gt[..., 1] - img_gen[..., 1]) ** 2)
-            se_3 += np.sum((img_gt[..., 2] - img_gen[..., 2]) ** 2)
+            # se_3 += np.sum((img_gt[..., 2] - img_gen[..., 2]) ** 2)
 
             img_gen = np.uint8(img_gen*255)
             outfile = os.path.join(output_path, FLAGS.dataset_name, FLAGS.dataset_name + '_test', f)
             preprocess.write_data(img_gen, outfile)
 
 
-    mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
-
-    mse1 = se_1 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
-    mse2 = se_2 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
-    mse3 = se_3 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
-    print(FLAGS.dataset_name)
-    print("MSE: ", mse)
-    print("MSE_vol: ", mse1)
-    print("MSE_sp: ", mse2)
-    print("MSE_hd: ", mse3)
-
-    pred_list = np.stack(pred_list, axis=0)
-    gt_list = np.stack(gt_list, axis=0)
-    mavg_list = np.stack(mavg_list, axis=0)
-
-    array_mse = masked_mse_np(mavg_list, gt_list, np.nan)
-    print(f'MAVG {step} MSE: ', array_mse)
-
-    # adapt pred on non_zero mavg pred only
-    pred_list_copy = np.zeros_like(pred_list)
-    pred_list_copy[mavg_list > 0] = pred_list[mavg_list > 0]
-
-    array_mse = masked_mse_np(pred_list_copy, gt_list, np.nan)
-    print(f'PRED+MAVG {step} MSE: ', array_mse)
-
-    # Evaluate on nodes
-    # Check MSE on node_pos
-    img_gt_node = gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :].astype(np.float32)
-    img_gen_node = pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :].astype(np.float32)
-    mse_node_all = masked_mse_np(img_gen_node, img_gt_node, np.nan)
-    mse_node_volume = masked_mse_np(img_gen_node[..., 0], img_gt_node[..., 0], np.nan)
-    mse_node_speed = masked_mse_np(img_gen_node[..., 1], img_gt_node[..., 1], np.nan)
-    mse_node_direction = masked_mse_np(img_gen_node[..., 2], img_gt_node[..., 2], np.nan)
-    print("Results on Node Pos: ")
-    print("MSE: ", mse_node_all)
-    print("Volume mse: ", mse_node_volume)
-    print("Speed mse: ", mse_node_speed)
-    print("Direction mse: ", mse_node_direction)
-
-    print("Evaluating on Condensed Graph....")
-    seq_length = np.shape(gt_list)[2]
-    img_height = np.shape(gt_list)[3]
-    img_width = np.shape(gt_list)[4]
-    num_channels = np.shape(gt_list)[5]
-    gt_list = np.reshape(gt_list, [-1, seq_length,
-                                int(img_height / FLAGS.patch_size_height), FLAGS.patch_size_height,
-                                int(img_width / FLAGS.patch_size_width), FLAGS.patch_size_width,
-                                num_channels])
-    gt_list = np.transpose(gt_list, [0, 1, 2, 4, 3, 5, 6])
-
-    pred_list = np.reshape(pred_list, [-1, seq_length,
-                                   int(img_height / FLAGS.patch_size_height), FLAGS.patch_size_height,
-                                   int(img_width / FLAGS.patch_size_width), FLAGS.patch_size_width,
-                                   num_channels])
-    pred_list = np.transpose(pred_list, [0, 1, 2, 4, 3, 5, 6])
-
-    node_pos = preprocess.construct_road_network_from_grid_condense(FLAGS.patch_size_height, FLAGS.patch_size_width,
-                                                                    test_data_paths)
-
-    img_gt_node = gt_list[:, :, node_pos[:, 0], node_pos[:, 1], ...].astype(np.float32)
-    img_gen_node = pred_list[:, :, node_pos[:, 0], node_pos[:, 1], ...].astype(np.float32)
-    mse_node_all = masked_mse_np(img_gen_node, img_gt_node, np.nan)
-    mse_node_volume = masked_mse_np(img_gen_node[..., 0], img_gt_node[..., 0], np.nan)
-    mse_node_speed = masked_mse_np(img_gen_node[..., 1], img_gt_node[..., 1], np.nan)
-    mse_node_direction = masked_mse_np(img_gen_node[..., 2], img_gt_node[..., 2], np.nan)
-    print("MSE: ", mse_node_all)
-    print("Volume mse: ", mse_node_volume)
-    print("Speed mse: ", mse_node_speed)
-    print("Direction mse: ", mse_node_direction)
+    # mse = se_total / (len(indicies) * len(sub_files) * 495 * 436 * 3 * 3)
+    #
+    # mse1 = se_1 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
+    # mse2 = se_2 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
+    # # mse3 = se_3 / (len(indicies) * len(sub_files) * 495 * 436 * 3)
+    # print(FLAGS.dataset_name)
+    # print("MSE: ", mse)
+    # print("MSE_vol: ", mse1)
+    # print("MSE_sp: ", mse2)
+    # # print("MSE_hd: ", mse3)
+    #
+    # pred_list = np.stack(pred_list, axis=0)
+    # gt_list = np.stack(gt_list, axis=0)
+    # mavg_list = np.stack(mavg_list, axis=0)
+    #
+    # array_mse = masked_mse_np(mavg_list, gt_list, np.nan)
+    # print(f'MAVG {step} MSE: ', array_mse)
+    #
+    # # adapt pred on non_zero mavg pred only
+    # pred_list_copy = np.zeros_like(pred_list)
+    # pred_list_copy[mavg_list > 0] = pred_list[mavg_list > 0]
+    #
+    # array_mse = masked_mse_np(pred_list_copy, gt_list, np.nan)
+    # print(f'PRED+MAVG {step} MSE: ', array_mse)
+    #
+    # # Evaluate on nodes
+    # # Check MSE on node_pos
+    # img_gt_node = gt_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :].astype(np.float32)
+    # img_gen_node = pred_list[:, :, :, node_pos[:, 0], node_pos[:, 1], :].astype(np.float32)
+    # mse_node_all = masked_mse_np(img_gen_node, img_gt_node, np.nan)
+    # mse_node_volume = masked_mse_np(img_gen_node[..., 0], img_gt_node[..., 0], np.nan)
+    # mse_node_speed = masked_mse_np(img_gen_node[..., 1], img_gt_node[..., 1], np.nan)
+    # mse_node_direction = masked_mse_np(img_gen_node[..., 2], img_gt_node[..., 2], np.nan)
+    # print("Results on Node Pos: ")
+    # print("MSE: ", mse_node_all)
+    # print("Volume mse: ", mse_node_volume)
+    # print("Speed mse: ", mse_node_speed)
+    # print("Direction mse: ", mse_node_direction)
+    #
+    # print("Evaluating on Condensed Graph....")
+    # seq_length = np.shape(gt_list)[2]
+    # img_height = np.shape(gt_list)[3]
+    # img_width = np.shape(gt_list)[4]
+    # num_channels = np.shape(gt_list)[5]
+    # gt_list = np.reshape(gt_list, [-1, seq_length,
+    #                             int(img_height / FLAGS.patch_size_height), FLAGS.patch_size_height,
+    #                             int(img_width / FLAGS.patch_size_width), FLAGS.patch_size_width,
+    #                             num_channels])
+    # gt_list = np.transpose(gt_list, [0, 1, 2, 4, 3, 5, 6])
+    #
+    # pred_list = np.reshape(pred_list, [-1, seq_length,
+    #                                int(img_height / FLAGS.patch_size_height), FLAGS.patch_size_height,
+    #                                int(img_width / FLAGS.patch_size_width), FLAGS.patch_size_width,
+    #                                num_channels])
+    # pred_list = np.transpose(pred_list, [0, 1, 2, 4, 3, 5, 6])
+    #
+    # node_pos = preprocess.construct_road_network_from_grid_condense(FLAGS.patch_size_height, FLAGS.patch_size_width,
+    #                                                                 test_data_paths)
+    #
+    # img_gt_node = gt_list[:, :, node_pos[:, 0], node_pos[:, 1], ...].astype(np.float32)
+    # img_gen_node = pred_list[:, :, node_pos[:, 0], node_pos[:, 1], ...].astype(np.float32)
+    # mse_node_all = masked_mse_np(img_gen_node, img_gt_node, np.nan)
+    # mse_node_volume = masked_mse_np(img_gen_node[..., 0], img_gt_node[..., 0], np.nan)
+    # mse_node_speed = masked_mse_np(img_gen_node[..., 1], img_gt_node[..., 1], np.nan)
+    # mse_node_direction = masked_mse_np(img_gen_node[..., 2], img_gt_node[..., 2], np.nan)
+    # print("MSE: ", mse_node_all)
+    # print("Volume mse: ", mse_node_volume)
+    # print("Speed mse: ", mse_node_speed)
+    # print("Direction mse: ", mse_node_direction)
 
     print("Finished...")
 
