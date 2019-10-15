@@ -124,9 +124,6 @@ class Model(object):
             loss = output_list[1]
             pred_ims = gen_ims[:,FLAGS.input_length-1:]
             self.loss_train = loss
-
-            # make a weighted loss
-
             # gradients
             all_params = tf.trainable_variables()
             grads.append(tf.gradients(loss, all_params))
@@ -273,8 +270,9 @@ def main(argv=None):
                 cost += model.train(ims_rev, lr, mask_true, batch_size)
                 cost = cost/2
 
-            cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
-                           FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
+            # cost = cost / (batch_size * FLAGS.img_height * FLAGS.img_width * FLAGS.patch_size_height *
+            #                FLAGS.patch_size_width * FLAGS.img_channel * (FLAGS.seq_length - 1))
+
             if itr % FLAGS.display_interval == 0:
                 print('itr: ' + str(itr), flush=True)
                 print('training loss: ' + str(cost), flush=True)
