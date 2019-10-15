@@ -4,6 +4,27 @@ import tensorflow as tf
 from layers.GradientHighwayUnit import GHU as ghu
 from layers.CausalLSTMCell import CausalLSTMCell as cslstm
 FLAGS = tf.app.flags.FLAGS
+import numpy as np
+
+def masked_mse_tf(preds, labels, null_val=np.nan):
+    """
+    Accuracy with masking.
+    :param preds:
+    :param labels:
+    :param null_val:
+    :return:
+    """
+    if np.isnan(null_val):
+        mask = ~tf.is_nan(labels)
+    else:
+        mask = tf.not_equal(labels, null_val)
+    mask = tf.cast(mask, tf.float32)
+    mask /= tf.reduce_mean(mask)
+    mask = tf.where(tf.is_nan(mask), tf.zeros_like(mask), mask)
+    loss = tf.square(tf.subtract(preds, labels))
+    loss = loss * mask
+    loss = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
+    return tf.reduce_mean(loss)
 
 def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
         seq_length=20, input_length=10, tln=True, batch_size=None):
@@ -64,7 +85,8 @@ def rnn(images, mask_true, num_layers, num_hidden, filter_size, stride=1,
     # [batch_size, seq_length, height, width, channels]
     gen_images = tf.transpose(gen_images, [1,0,2,3,4])
     # loss = tf.nn.l2_loss(gen_images - images[:,1:])
-    loss = tf.nn.l2_loss(gen_images - images[:,1:]) / tf.reduce_sum(images[:,1:] > 0)
+    loss = masked_mse_tf(gen_images, images[:,1:])
+    # loss = tf.nn.l2_loss(gen_images - images[:,1:]) / tf.reduce_sum(images[:,1:] > 0)
     #loss += tf.reduce_sum(tf.abs(gen_images - images[:,1:]))
     return [gen_images, loss]
 
