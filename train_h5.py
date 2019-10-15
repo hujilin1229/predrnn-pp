@@ -182,7 +182,7 @@ def main(argv=None):
     # tf.io.gfile.makedirs(FLAGS.gen_frm_dir)
 
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
-    FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}.ckpt'
+    FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}_weighted.ckpt'
     FLAGS.gen_frm_dir += FLAGS.dataset_name
     if not tf.io.gfile.exists(FLAGS.save_dir):
         # tf.io.gfile.rmtree(FLAGS.save_dir)
