@@ -227,8 +227,8 @@ def main(argv=None):
     FLAGS.save_dir += FLAGS.dataset_name + str(FLAGS.seq_length) + FLAGS.num_hidden
     print(FLAGS.save_dir)
     # FLAGS.best_model = FLAGS.save_dir + '/best.ckpt'
-    FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}.ckpt'
-    # FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}_weighted.ckpt'
+    # FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}.ckpt'
+    FLAGS.best_model = FLAGS.save_dir + f'/best_channels{FLAGS.img_channel}_weighted.ckpt'
     # FLAGS.save_dir += FLAGS.dataset_name
     FLAGS.pretrained_model = FLAGS.save_dir
 
